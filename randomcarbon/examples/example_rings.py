@@ -1,7 +1,8 @@
 # example script for running rings analysis on a structure as a post processing
 from randomcarbon.rings.run import run_rings
 from randomcarbon.rings.input import RingsInput, RingMethod
-from pymatgen import Structure
+from pymatgen.core.structure import Structure
+
 
 s = Structure.from_file("structure.cif")
 

@@ -8,7 +8,7 @@ from collections.abc import Sequence
 from typing import List, Union, Dict, Generator
 from pymatgen.core.sites import PeriodicSite
 from pymatgen.core.structure import Structure
-from pymatgen import Element, Species
+from pymatgen.core.periodic_table import Element, Species
 from monty.json import MSONable, MontyDecoder
 from monty.os import cd
 from monty.dev import requires

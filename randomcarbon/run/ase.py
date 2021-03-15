@@ -2,7 +2,7 @@ import logging
 import numpy as np
 from typing import Optional, Union
 from pymatgen.io.ase import AseAtomsAdaptor
-from pymatgen import Structure
+from pymatgen.core.structure import Structure
 from ase.calculators.calculator import Calculator
 from randomcarbon.utils.factory import generate_optimizer, Factory
 from randomcarbon.utils.structure import set_properties, get_properties

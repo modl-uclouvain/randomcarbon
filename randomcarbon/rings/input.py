@@ -5,7 +5,7 @@ import logging
 from enum import IntEnum
 from monty.os import makedirs_p, cd
 from monty.json import MSONable
-from pymatgen import Structure
+from pymatgen.core.structure import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.analysis.local_env import NearNeighbors, CrystalNN
 from ase.io import write

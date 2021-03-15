@@ -6,7 +6,8 @@ from pymatgen.core.structure import Structure
 from pymatgen.core.lattice import Lattice
 from pymatgen.core.structure import PeriodicSite
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
-from pymatgen import Element, Species, DummySpecies, Composition
+from pymatgen.core.periodic_table import Element, Species, DummySpecies
+from pymatgen.core.composition import Composition
 from pymatgen.core.operations import SymmOp
 from pymatgen.symmetry.groups import in_array_list
 from pymatgen.util.typing import ArrayLike
