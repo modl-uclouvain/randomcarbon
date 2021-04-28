@@ -140,7 +140,6 @@ class SequentialRunner(BaseRunner):
                          spacegroup_primitive=spacegroup_primitive, taggers=taggers)
 
         self.initial_structure = initial_structure
-        set_properties(self.initial_structure, {"history": []})
 
     @abstractmethod
     def run(self, max_structures: int = None):
@@ -274,8 +273,6 @@ class ParallelRunner(BaseRunner):
                          spacegroup_primitive=spacegroup_primitive, taggers=taggers)
 
         self.initial_structures = initial_structures
-        for s in initial_structures:
-            set_properties(s, {"history": []})
 
         if inner_runner not in (RUNNERS_NAME.keys()):
             raise ValueError(f"Unknown runner {inner_runner}")
@@ -288,7 +285,7 @@ class ParallelRunner(BaseRunner):
                        fmax=self.fmax, steps=self.steps, constraints=self.constraints,
                        optimizer=self.optimizer, opt_kwargs=self.opt_kwargs,
                        allow_not_converged=self.allow_not_converged, store=self.store,
-                       spacegroup_primitive=self.spacegroup_primitive)
+                       spacegroup_primitive=self.spacegroup_primitive, taggers=self.taggers)
         r.run(max_structures)
 
     def run(self, max_structures: int = None):
@@ -335,7 +332,6 @@ class BranchingParallelRunner(BaseRunner):
         self.process_status = self.manager.dict()
         for structure in self.initial_structures:
             self.queue.put(structure)
-            set_properties(structure, {"history": []})
         if not generators:
             generators = []
         elif not isinstance(generators, (list, tuple)):
