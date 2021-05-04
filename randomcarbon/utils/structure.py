@@ -1,17 +1,28 @@
+from itertools import chain
 import uuid
 import logging
+from ase.io.trajectory import Trajectory
 import numpy as np
+from numpy.core.records import array
 from scipy.optimize import linear_sum_assignment
 from pymatgen.core.structure import Structure
 from pymatgen.core.lattice import Lattice
 from pymatgen.core.structure import PeriodicSite
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
-from pymatgen.core.periodic_table import Element, Species, DummySpecies
-from pymatgen.core.composition import Composition
+from pymatgen import Element, Species, DummySpecies, Composition
 from pymatgen.core.operations import SymmOp
+from randomcarbon.utils.factory import Factory
 from pymatgen.symmetry.groups import in_array_list
-from pymatgen.util.typing import ArrayLike
-from typing import List, Union, Optional, Any, Tuple, Sequence
+from pymatgen.util.typing import VectorLike as ArrayLike
+from typing import List, Union, Optional, Any, Tuple, Sequence, Dict
+import random 
+from ase import Atoms
+from ase.optimize import BFGS
+from pymatgen.io.ase import AseAtomsAdaptor
+from ase.calculators.kim.kim import KIM
+from ase.spacegroup.spacegroup import Spacegroup as SpacegroupAse, get_spacegroup
+from deprecated import deprecated
+from ase.spacegroup.symmetrize import FixSymmetry
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +63,36 @@ def get_struc_min_dist(structure1: Structure, structure2: Structure) -> float:
     """
     return get_min_dist(structure1.frac_coords, structure2)
 
+def remove_symmetrized_atom(template: Structure, spacegroup: Union[str, int] = None,
+                             current: Structure = None,
+                             specie: str = "C", max_dist_eq: float = 0.1,
+                             min_dist_current: float = 1.2, max_dist_current: float = 1.6,
+                             min_dist_from_template: float = 3, max_tests: int = 1000) :
+    
+    if not current:
+        return None
+    if not spacegroup:
+        spga = SpacegroupAnalyzer(template)
+        spacegroup = spga.get_space_group_number()
+    
+    pos = np.array(current.frac_coords)
+    symstruc = SpacegroupAnalyzer(current).get_symmetrized_structure()
+    removed = [x.frac_coords for x in symstruc.find_equivalent_sites(symstruc[random.randint(0, len(symstruc)-1)])]
+    print(len(removed))
+    new_coords = np.delete(pos, [np.argwhere(e) for e in removed], axis=0)
+    print(len(new_coords))
+    new_species = np.full(len(new_coords), specie)
+    
+    structure = Structure(lattice=template.lattice, species=new_species,
+                              coords=new_coords, coords_are_cartesian=False)
+    
+    return structure
+    
+        
+    
 
+    
+    
 def add_new_symmetrized_atom(template: Structure, spacegroup: Union[str, int] = None,
                              current: Structure = None, supergroup_transf: Tuple[List, List] = None,
                              symm_ops: List[SymmOp] = None, specie: str = "C", max_dist_eq: float = 0.1,
@@ -137,7 +177,7 @@ def add_new_symmetrized_atom(template: Structure, spacegroup: Union[str, int] = 
             if neq == 1:
                 break
             test_coords = np.mean(eq_fcoords, axis=0)
-        else:
+        else: 
             return None
 
         # dist_template = get_min_dist(single[0].frac_coords, template)
@@ -540,6 +580,29 @@ def set_structure_id(structure: Structure) -> Structure:
         set_properties(structure, {"structure_id": structure_id})
     return structure
 
+def symmops_from_spacegroup(spacegroup: int, template: Structure):
+    """
+    Function that will return a list of the symmetry operations of the spacegroup passed in argument.
+    
+    Args:
+        spacegroup: the international spacegroup number
+        lattice: a pymatgen Lattice
+
+    Returns:
+        The list of pymatgen symmetry operations [SymOpp]
+    
+    """
+
+    test_coords = np.random.uniform(0., 1., size=3)
+    spga = SpacegroupAnalyzer(template)
+    template = spga.get_conventional_standard_structure()
+    structure = Structure.from_spacegroup(sg=spacegroup, lattice= template.lattice, species=["C"], coords= [test_coords])
+
+    symm_str = SpacegroupAnalyzer(structure).get_primitive_standard_structure()
+    symm_str = SpacegroupAnalyzer(symm_str)
+    return symm_str.get_symmetry_operations()
+
+
 
 def has_low_energy(structure: Structure, energy_threshold: float) -> bool:
     """
@@ -563,3 +626,141 @@ def has_low_energy(structure: Structure, energy_threshold: float) -> bool:
             return False
         original_energy = original_energy_tot / len(structure)
     return original_energy <= energy_threshold
+
+def extract_random_seed(structure:Structure, number:int=4) -> Structure:
+
+    seedlist = random.sample(range(0,len(structure)-1), number)
+    return Structure.from_sites(sites=[structure[i] for i in seedlist])
+
+def extract_chain(seed:Structure, lring: int=6, cut_rad :float=2)-> Structure:
+    nodelist= []
+    nodelist.append(random.randint(0, len(seed)-1))
+    site_fcoords= seed.frac_coords
+    for i in range(1, lring):
+       
+        index = nodelist[i-1]
+        _, _, indices, _ = seed.lattice.get_points_in_sphere_py(site_fcoords, 
+                         center=seed[index].coords, r=cut_rad, zip_results=False)
+        if all(elem in nodelist  for elem in indices):
+            return extract_chain(seed=seed,lring=6, cut_rad= cut_rad+1)
+        for j in indices:
+            
+            node = j            
+            if node not in nodelist:
+                nodelist.append(node)
+                break
+   
+    return Structure.from_sites([seed[i] for i in nodelist])
+
+
+def extract_sym_seed(seed:Structure, template:Structure, spacegroup:int=None, lring:int=6, cut_rad:float=2, temp_dist:float=2, max_tests:int=500, merge_rad:float=1.2):
+    """
+    Function that will extract a part of a Structure, and returned a symmetrized version of it,
+    based on the spacegroup provided. If the spacegroup is not provided, the spacegroup of the template will be used.
+    It will check that the structure is far enough from the template
+    Args:
+        seed: the structure from which the atoms are to be extracted
+        template: the zeolite template
+        spacegroup: the spacegroup used to symmetrize the seed
+        lring: number of atoms to extract
+        cut_rad: radius treshold to merge atoms close to each other
+        temp_dist: distance to the template
+    Returns:
+        A structure symmetrized taken from the seed
+        None if no structure far enough from the zeolite has been found
+    """
+    
+        
+    if spacegroup == None:
+        spacegroup = SpacegroupAnalyzer(template).get_space_group_number() 
+    for i in range(0,max_tests):
+        chain = extract_chain(seed = seed, lring=lring, cut_rad=cut_rad)
+        test = Structure.from_spacegroup(sg=spacegroup, lattice=chain.lattice, species=chain.species, coords=chain.frac_coords)
+        test.merge_sites(merge_rad, "average")
+        dist = get_struc_min_dist(test, template)
+        if dist <= temp_dist:
+            continue
+        return test
+
+
+
+def relax(structure:Structure, calc="Sim_LAMMPS_AIREBO_Morse_OConnorAndzelmRobbins_2015_CH__SM_460187474631_000"):
+    Atoms = AseAtomsAdaptor().get_atoms(structure=structure)
+    Atoms.calc = KIM(calc)
+    relax = BFGS(Atoms, trajectory = "relax.traj")
+    relax.irun(fmax=0.05, steps=200)
+    relax.run()
+    if relax != True:
+        print("The relaxation has failed")
+    relax_steps = Trajectory("relax.traj")
+    return AseAtomsAdaptor().get_structure(relax_steps[-1])
+
+
+
+def extract_best_sym_seed(seed:Structure, template:Structure, spacegroup:int=None, lring:int=6, cut_rad:float=2, temp_dist:float=2 , max_tests:int=10):
+    if spacegroup == None:
+        spacegroup = SpacegroupAnalyzer(template).get_space_group_number() 
+    tests = []
+    energies = []
+    for j in range(0,max_tests):
+        test = extract_sym_seed(seed, template, spacegroup, lring, cut_rad, temp_dist)
+        tests.append(test)
+        
+
+        if test != None:
+            Atoms = AseAtomsAdaptor().get_atoms(test)
+            Atoms.calc = KIM("Tersoff_LAMMPS_Tersoff_1989_SiC__MO_171585019474_002")
+            energy = Atoms.get_potential_energy()/Atoms.get_global_number_of_atoms()
+            energies.append(energy)
+    if all(i == energies[0] for i in energies):
+        print("No good structure generated")
+        return None
+    return tests[np.argmin(np.array(energies))], energies[np.argmin(np.array(energies))]
+
+
+@deprecated(version="0.1", reason="You should use another function")
+def add_sym_seed(seed:Structure, template:Structure, spacegroup:int = None)->Structure:
+    
+    if spacegroup == None:
+        spacegroup = SpacegroupAnalyzer(template).get_space_group_number()
+    sym = Structure.from_spacegroup(lattice= template.lattice, species= ["C" for i in range(0, len(seed))],
+        coords=seed.frac_coords, sg=spacegroup)
+    dist = get_struc_min_dist(sym, template)
+    
+    if dist < 2.1 or sym.is_ordered == False:
+        print("Failed, distance: ", dist)
+        return None
+    
+    Atoms = AseAtomsAdaptor.get_atoms(sym)
+    nlist = np.array(Atoms.get_all_distances())
+    np.fill_diagonal(nlist, 50) 
+    if nlist.min() < 1.4:
+        print("Distance between atoms too short: ", nlist.min())
+        return None
+
+    else:
+        return sym
+
+
+
+@deprecated(version="0.1", reason="You should use another function")
+def sym_seed(original:Structure, template:Structure, lring: int = 6, cut_rad:float=2, spacegroup: int=None, max_tests:int=500)->Structure:
+    i = 0
+
+    sym_seed = None
+    energy = 1
+    while i < max_tests:
+        extr = extract_chain(seed=original, lring=lring, cut_rad=cut_rad)
+        sym_seed = add_sym_seed(seed=extr, template=template, spacegroup=spacegroup)
+        if sym_seed != None:
+            Atoms = AseAtomsAdaptor.get_atoms(sym_seed)
+            Atoms.calc = KIM("Tersoff_LAMMPS_Tersoff_1989_SiC__MO_171585019474_002")
+            energy = Atoms.get_potential_energy()/Atoms.get_global_number_of_atoms()
+            if energy < 0:
+                return sym_seed
+        i+=1
+        print(i)
+    return None
+
+def get_spgn(structure:Structure):
+    return SpacegroupAnalyzer(Structure).get_space_group_number()
