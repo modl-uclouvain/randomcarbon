@@ -1,6 +1,6 @@
 import logging
 from typing import Optional, Union
-from randomcarbon.utils.structure import get_struc_min_dist, 
+from randomcarbon.utils.structure import get_struc_min_dist
 from randomcarbon.evolution.core import Blocker
 from randomcarbon.utils.factory import Factory
 from pymatgen.core.structure import Structure
@@ -57,10 +57,9 @@ class PolygonBlocker(Blocker):
 
     def __init__(self,method: Union[RingMethod, int]=5, lattice_matrix: bool = True,
                  maximum_search_depth: int = 2, cutoff_rad: Union[dict, NearNeighbors] = {("C", "C"): 1.9},
-                 grmax: float = None, executable: str = "rings", irreducible: bool = True ):
-        self.calculator = calculator
+                 grmax: float = None, executable: str = "rings", irreducible: bool = True, nsides:int=4 ):
+        
         self.nsides = nsides
-        self.ringstat = ringstat
         self.method = method
         self.lattice_matrix = lattice_matrix
         self.maximum_search_depth = maximum_search_depth
@@ -89,7 +88,7 @@ class PolygonBlocker(Blocker):
 
         properties = structure.get_properties()
         properties['rings']= stats
-        structure.set_properties(structures, properties)
+        structure.set_properties(structure, properties)
 
         return None
         
