@@ -180,14 +180,14 @@ class RingsStatsTag(Tagger):
                          grmax=self.grmax)
 
         out = run_rings(inp, executable=self.executable, irreducible=self.irreducible)
-
+        
         if not out:
             sid = get_property(structure, "structure_id")
             logger.warning(f"no output produced by rings for structure {sid}")
             return doc
 
         rings_list = out[self.method]
-
+        
         doc["ring_stats"] = rings_list.get_stats_dict()
 
         return doc

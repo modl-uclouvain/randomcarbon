@@ -98,7 +98,7 @@ class BaseRunner(ABC):
                 properties["energy"] *= len(structure) / len(relaxed_structure)
                 relaxed_structure = tmp_relaxed_structure
                 set_properties(relaxed_structure, properties)
-
+                
             new_structures = evolve_structure(relaxed_structure, evolvers=self.evolvers,
                                               blockers=self.blockers, filters=self.filters)
 
