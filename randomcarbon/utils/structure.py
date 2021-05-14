@@ -1,9 +1,7 @@
 from itertools import chain
 import uuid
 import logging
-from ase.io.trajectory import Trajectory
 import numpy as np
-from numpy.core.records import array
 from scipy.optimize import linear_sum_assignment
 from pymatgen.core.structure import Structure
 from pymatgen.core.lattice import Lattice
@@ -16,13 +14,10 @@ from pymatgen.symmetry.groups import in_array_list
 from pymatgen.util.typing import VectorLike as ArrayLike
 from typing import List, Union, Optional, Any, Tuple, Sequence, Dict
 import random 
-from ase import Atoms
-from ase.optimize import BFGS
+
 from pymatgen.io.ase import AseAtomsAdaptor
 from ase.calculators.kim.kim import KIM
 from ase.spacegroup.spacegroup import Spacegroup as SpacegroupAse, get_spacegroup
-from deprecated import deprecated
-from ase.spacegroup.symmetrize import FixSymmetry
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +90,24 @@ def remove_symmetrized_atom(template: Structure, spacegroup: Union[str, int] = N
     return structure
     
         
-    
+def remove_symmetrized_atom(structure: Structure, symprec: float = 0.001, angle_tolerance: float = 5.0) -> Structure:
+    """
+    Remove a randomly chosen atom and all the symmetry-equivalent atoms, based on the provided spacegroup. If not provided, the 
+    spacegroup of the template will be used.
+
+    Args:
+        structure: the Structure on which atoms have to be removed
+        symprec: the precision in detecting the spacegroup of the structure
+        angle_tolerance: tolerance on angle symmetry
+
+    Returns:
+        A structure with atoms removed
+    """
+    spga = SpacegroupAnalyzer(structure, symprec=symprec, angle_tolerance=angle_tolerance)
+    ssym = spga.get_symmetrized_structure()
+    indices_to_remove = random.choice(ssym.equivalent_indices)
+    new_s = Structure.from_sites([site for i, site in enumerate(ssym) if i not in indices_to_remove])
+    return new_s
 
     
     
@@ -634,6 +646,11 @@ def has_low_energy(structure: Structure, energy_threshold: float) -> bool:
     return original_energy <= energy_threshold
 
 def extract_random_seed(structure:Structure, number:int=4) -> Structure:
+    """
+
+
+    """
+
 
     seedlist = random.sample(range(0,len(structure)-1), number)
     return Structure.from_sites(sites=[structure[i] for i in seedlist])
@@ -690,17 +707,6 @@ def extract_sym_seed(seed:Structure, template:Structure, spacegroup:int=None, lr
 
 
 
-def relax(structure:Structure, calc="Sim_LAMMPS_AIREBO_Morse_OConnorAndzelmRobbins_2015_CH__SM_460187474631_000"):
-    Atoms = AseAtomsAdaptor().get_atoms(structure=structure)
-    Atoms.calc = KIM(calc)
-    relax = BFGS(Atoms, trajectory = "relax.traj")
-    relax.irun(fmax=0.05, steps=200)
-    relax.run()
-    if relax != True:
-        print("The relaxation has failed")
-    relax_steps = Trajectory("relax.traj")
-    return AseAtomsAdaptor().get_structure(relax_steps[-1])
-
 
 
 def extract_best_sym_seed(seed:Structure, template:Structure, spacegroup:int=None, lring:int=6, cut_rad:float=2, temp_dist:float=2 , max_tests:int=10):
@@ -724,49 +730,3 @@ def extract_best_sym_seed(seed:Structure, template:Structure, spacegroup:int=Non
     return tests[np.argmin(np.array(energies))], energies[np.argmin(np.array(energies))]
 
 
-@deprecated(version="0.1", reason="You should use another function")
-def add_sym_seed(seed:Structure, template:Structure, spacegroup:int = None)->Structure:
-    
-    if spacegroup == None:
-        spacegroup = SpacegroupAnalyzer(template).get_space_group_number()
-    sym = Structure.from_spacegroup(lattice= template.lattice, species= ["C" for i in range(0, len(seed))],
-        coords=seed.frac_coords, sg=spacegroup)
-    dist = get_struc_min_dist(sym, template)
-    
-    if dist < 2.1 or sym.is_ordered == False:
-        print("Failed, distance: ", dist)
-        return None
-    
-    Atoms = AseAtomsAdaptor.get_atoms(sym)
-    nlist = np.array(Atoms.get_all_distances())
-    np.fill_diagonal(nlist, 50) 
-    if nlist.min() < 1.4:
-        print("Distance between atoms too short: ", nlist.min())
-        return None
-
-    else:
-        return sym
-
-
-
-@deprecated(version="0.1", reason="You should use another function")
-def sym_seed(original:Structure, template:Structure, lring: int = 6, cut_rad:float=2, spacegroup: int=None, max_tests:int=500)->Structure:
-    i = 0
-
-    sym_seed = None
-    energy = 1
-    while i < max_tests:
-        extr = extract_chain(seed=original, lring=lring, cut_rad=cut_rad)
-        sym_seed = add_sym_seed(seed=extr, template=template, spacegroup=spacegroup)
-        if sym_seed != None:
-            Atoms = AseAtomsAdaptor.get_atoms(sym_seed)
-            Atoms.calc = KIM("Tersoff_LAMMPS_Tersoff_1989_SiC__MO_171585019474_002")
-            energy = Atoms.get_potential_energy()/Atoms.get_global_number_of_atoms()
-            if energy < 0:
-                return sym_seed
-        i+=1
-        print(i)
-    return None
-
-def get_spgn(structure:Structure):
-    return SpacegroupAnalyzer(Structure).get_space_group_number()
