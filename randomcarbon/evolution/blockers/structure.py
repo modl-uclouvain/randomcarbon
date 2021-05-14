@@ -78,6 +78,9 @@ class PolygonBlocker(Blocker):
                          maximum_search_depth=self.maximum_search_depth, cutoff_rad=self.cutoff_rad,
                          grmax=self.grmax) 
         
+        inp_parameters = {'method': self.method, "lattice_matrix":self.lattice_matrix, 'maximum_search_depth': self.maximum_search_depth,
+                        "cutoff_rad" :self.cutoff_rad, "grmax":self.grmax } 
+
         out = run_rings(inp, executable=self.executable, irreducible=self.irreducible)
         
         if not out:
@@ -92,8 +95,8 @@ class PolygonBlocker(Blocker):
         unwanted= [i for i in size if i in self.nsides]
         properties = get_properties(structure)
         properties['rings']= stats
-        structure = set_properties(structure, {'rings': stats, "rings_input": inp})
-        print(get_property(structure, 'rings' ))
+        structure = set_properties(structure, {'rings': stats, "rings_input": inp_parameters})
+        
         if unwanted !=None:
             return f"{self.__class__.__name__}. {unwanted}-gon detected in the structure"
 
