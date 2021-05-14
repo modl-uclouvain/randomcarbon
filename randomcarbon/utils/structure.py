@@ -65,10 +65,16 @@ def get_struc_min_dist(structure1: Structure, structure2: Structure) -> float:
 
 def remove_symmetrized_atom(template: Structure, spacegroup: Union[str, int] = None,
                              current: Structure = None,
-                             specie: str = "C", max_dist_eq: float = 0.1,
-                             min_dist_current: float = 1.2, max_dist_current: float = 1.6,
-                             min_dist_from_template: float = 3, max_tests: int = 1000) :
-    
+                             specie: str = "C") -> Structure :
+    """
+    Remove a randomly chosen atom and all the symmetry-equivalent atoms, based on the provided spacegroup. If not provided, the 
+    spacegroup of the template will be used.
+
+    Args:
+        template: Structure of the zeolite template
+        spacegroup: the spacegroup of the carbon structure
+        current: the Structure on which atoms have to be removed
+    """
     if not current:
         return None
     if not spacegroup:

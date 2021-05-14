@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, Union
+from typing import List, Optional, Union
 from randomcarbon.utils.structure import get_struc_min_dist
 from randomcarbon.evolution.core import Blocker
 from randomcarbon.utils.factory import Factory
@@ -8,6 +8,7 @@ from pymatgen.analysis.local_env import NearNeighbors
 from randomcarbon.output.taggers import RingsStatsTag
 from randomcarbon.rings.input import RingMethod, RingsInput
 from randomcarbon.rings.run import run_rings
+import math
 from randomcarbon.utils.structure import get_properties, set_properties, get_property
 logger = logging.getLogger(__name__)
 
@@ -54,15 +55,19 @@ class MaxNumNeighbors(Blocker):
 
         return None
 class PolygonBlocker(Blocker):
-
+    """
+    Blocker function that will stop the evolution of the structures if polygons with a given number of sides equals to the parameter nsides than the  is detected
+    inside the structure. It uses the R.I.N.G.S utility to detect the rings and their size. It adds the rings statistics to the structure 
+    as well as the 'rings' property.  
+    """
     def __init__(self,method: Union[RingMethod, int]=5, lattice_matrix: bool = True,
-                 maximum_search_depth: int = 2, cutoff_rad: Union[dict, NearNeighbors] = {("C", "C"): 1.9},
-                 grmax: float = None, executable: str = "rings", irreducible: bool = True, nsides:int=4 ):
+                  cutoff_rad: Union[dict, NearNeighbors] = {("C", "C"): 1.9},
+                 grmax: float = None, executable: str = "rings", irreducible: bool = True, nsides: List[int] = [3,4]):
         
         self.nsides = nsides
         self.method = method
         self.lattice_matrix = lattice_matrix
-        self.maximum_search_depth = maximum_search_depth
+        self.maximum_search_depth = int(math.ceil(max(nsides)/2))
         self.cutoff_rad = cutoff_rad
         self.grmax = grmax
         self.executable = executable
@@ -83,12 +88,14 @@ class PolygonBlocker(Blocker):
         rings_list = out[self.method]
         stats = rings_list.get_stats_dict()
         size = stats["size"]
-        if 4 in size or 3 in size:
-            return f"{self.__class__.__name__}. Squares or triangles detected in the structure"
+        size = [i for i in size if i not in [0, 1, 2]]
+        unwanted= [i for i in size if i in self.nsides]
+        if unwanted !=None:
+            return f"{self.__class__.__name__}. {unwanted}-gon detected in the structure"
 
-        properties = structure.get_properties()
+        properties = get_properties(structure)
         properties['rings']= stats
-        structure.set_properties(structure, properties)
+        structure = set_properties(structure, {'rings': stats})
 
         return None
         
