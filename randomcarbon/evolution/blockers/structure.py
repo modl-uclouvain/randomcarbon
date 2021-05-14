@@ -90,12 +90,12 @@ class PolygonBlocker(Blocker):
         size = stats["size"]
         size = [i for i in size if i not in [0, 1, 2]]
         unwanted= [i for i in size if i in self.nsides]
-        if unwanted !=None:
-            return f"{self.__class__.__name__}. {unwanted}-gon detected in the structure"
-
         properties = get_properties(structure)
         properties['rings']= stats
-        structure = set_properties(structure, {'rings': stats})
+        structure = set_properties(structure, {'rings': stats, "rings_input": inp})
+        print(get_property(structure, 'rings' ))
+        if unwanted !=None:
+            return f"{self.__class__.__name__}. {unwanted}-gon detected in the structure"
 
         return None
         
