@@ -5,7 +5,7 @@ from randomcarbon.evolution.core import Blocker
 from randomcarbon.utils.factory import Factory
 from pymatgen.core.structure import Structure
 from pymatgen.analysis.local_env import NearNeighbors
-from randomcarbon.output.taggers import RingsStatsTag
+from randomcarbon.output.taggers import RingsStatsTag, structure
 from randomcarbon.rings.input import RingMethod, RingsInput
 from randomcarbon.rings.run import run_rings
 import math
@@ -61,14 +61,15 @@ class PolygonBlocker(Blocker):
     as well as the 'rings' property.  
     """
     def __init__(self,method: Union[RingMethod, int]=5, lattice_matrix: bool = True,
-                  cutoff_rad: Union[dict, NearNeighbors] = {("C", "C"): 1.9},
-                 grmax: float = None, executable: str = "rings", irreducible: bool = True, nsides: List[int] = [3,4]):
+                  cutoff_rad: Union[dict, NearNeighbors] = None,
+                 grmax: float = None, executable: str = "rings", irreducible: bool = True, nsides: List[int] = None):
         
-        self.nsides = nsides
+        self.nsides = [3,4] if nsides is None else cutoff_rad
+
         self.method = method
         self.lattice_matrix = lattice_matrix
-        self.maximum_search_depth = int(math.ceil(max(nsides)/2))
-        self.cutoff_rad = cutoff_rad
+        self.maximum_search_depth = int(math.ceil(max(self.nsides)/2))
+        self.cutoff_rad = {("C", "C"): 1.9} if cutoff_rad is None else cutoff_rad
         self.grmax = grmax
         self.executable = executable
         self.irreducible = irreducible
@@ -78,8 +79,7 @@ class PolygonBlocker(Blocker):
                          maximum_search_depth=self.maximum_search_depth, cutoff_rad=self.cutoff_rad,
                          grmax=self.grmax) 
         
-        inp_parameters = {'method': self.method, "lattice_matrix":self.lattice_matrix, 'maximum_search_depth': self.maximum_search_depth,
-                        "cutoff_rad" :self.cutoff_rad, "grmax":self.grmax } 
+        
 
         out = run_rings(inp, executable=self.executable, irreducible=self.irreducible)
         
@@ -88,17 +88,14 @@ class PolygonBlocker(Blocker):
             logger.warning(f"no output produced by rings for structure {sid}, polygon blocker")
             return None
         
-        rings_list = out[self.method]
-        stats = rings_list.get_stats_dict()
-        size = stats["size"]
-        size = [i for i in size if i not in [0, 1, 2]]
-        unwanted= [i for i in size if i in self.nsides]
-        properties = get_properties(structure)
-        properties['rings']= stats
-        structure = set_properties(structure, {'rings': stats, "rings_input": inp_parameters})
+        dict = out[self.method].get_stats_dict()
+        set_properties(structure,  {'rings' : {'stats':dict, 'rings_input':inp } } )
+        if any(ns in dict['size'] for ns in self.nsides):
+            
+            return f"{self.__class__.__name__}. {[ns for ns in self.nsides if ns in dict['size']] }-gon detected in the structure"
+
         
-        if unwanted !=None:
-            return f"{self.__class__.__name__}. {unwanted}-gon detected in the structure"
+        
 
         return None
         

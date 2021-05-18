@@ -64,3 +64,5 @@ _integration_tests_
 .vscode
 
 
+
+*.log

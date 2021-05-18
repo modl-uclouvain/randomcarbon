@@ -175,22 +175,39 @@ class RingsStatsTag(Tagger):
         self.irreducible = irreducible
 
     def tag(self, doc: dict, structure: Structure = None) -> dict:
+        
         inp = RingsInput(structure=structure, methods=[self.method], lattice_matrix=self.lattice_matrix,
-                         maximum_search_depth=self.maximum_search_depth, cutoff_rad=self.cutoff_rad,
-                         grmax=self.grmax)
+                            maximum_search_depth=self.maximum_search_depth, cutoff_rad=self.cutoff_rad,
+                            grmax=self.grmax)
+        if get_property(structure, 'rings') is not None and get_property(structure, 'rings')['rings_input'] == inp:
+            
+            '''
+            I'm not sure if it is a good way to compare the two input parameters
+            '''
 
-        out = run_rings(inp, executable=self.executable, irreducible=self.irreducible)
-        
-        if not out:
-            sid = get_property(structure, "structure_id")
-            logger.warning(f"no output produced by rings for structure {sid}")
+            doc['rings_stats'] = get_property(structure, 'rings')['stats']
+
+            return doc           
+            
+            
+            
+        else:
+            
+            out = run_rings(inp, executable=self.executable, irreducible=self.irreducible)
+            
+            if not out:
+                sid = get_property(structure, "structure_id")
+                logger.warning(f"no output produced by rings for structure {sid}")
+                return doc
+
+            rings_list = out[self.method]
+            
+            doc["ring_stats"] = rings_list.get_stats_dict()
+
             return doc
+            
 
-        rings_list = out[self.method]
-        
-        doc["ring_stats"] = rings_list.get_stats_dict()
 
-        return doc
 
 
 class ConnectedTag(Tagger):

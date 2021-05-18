@@ -647,8 +647,14 @@ def has_low_energy(structure: Structure, energy_threshold: float) -> bool:
 
 def extract_random_seed(structure:Structure, number:int=4) -> Structure:
     """
-
-
+    Function that extracts a given number of atoms taken randomly
+    in a structure and returns a new one with those atoms
+    Args:
+        structure: a pymatgen Structure
+        number: number of atoms to be extracted from the structure
+    
+    Returns:
+        the Structure containing the extracted atoms
     """
 
 
@@ -656,6 +662,19 @@ def extract_random_seed(structure:Structure, number:int=4) -> Structure:
     return Structure.from_sites(sites=[structure[i] for i in seedlist])
 
 def extract_chain(seed:Structure, lring: int=6, cut_rad :float=2)-> Structure:
+    """
+    Function that extracts a chain of neighbouring atoms (seperated away from each
+    other by the value given by cut_rad). The chain is extracted randomly and has
+    a lenght of lring atoms.
+    Args:
+        seed: a pymatgen Structure on which to extract chain
+        lring: number of atoms in the chain
+        cut_rad: maximum distance between atoms in the chain
+    Returns:
+        the Structure containing the chain
+
+    """
+    
     nodelist= []
     nodelist.append(random.randint(0, len(seed)-1))
     site_fcoords= seed.frac_coords
@@ -710,6 +729,25 @@ def extract_sym_seed(seed:Structure, template:Structure, spacegroup:int=None, lr
 
 
 def extract_best_sym_seed(seed:Structure, template:Structure, spacegroup:int=None, lring:int=6, cut_rad:float=2, temp_dist:float=2 , max_tests:int=10):
+    """
+    Function that will extract a part of a Structure a repeated number of times, and returned the best symmetrized version of it (based on the energy),
+    based on the spacegroup provided. If the spacegroup is not provided, the spacegroup of the template will be used.
+    It will check that the structure is far enough from the template
+    Args:
+        seed: the structure from which the atoms are to be extracted
+        template: the zeolite template
+        spacegroup: the spacegroup used to symmetrize the seed
+        lring: number of atoms to extract
+        cut_rad: radius treshold to merge atoms close to each other
+        temp_dist: distance to the template
+        max_tests: number of chains to be generated in order to get the best one
+    Returns:
+        A structure symmetrized taken from the seed
+        None if no structure far enough from the zeolite has been found
+    """
+    
+    
+    
     if spacegroup == None:
         spacegroup = SpacegroupAnalyzer(template).get_space_group_number() 
     tests = []
@@ -728,5 +766,3 @@ def extract_best_sym_seed(seed:Structure, template:Structure, spacegroup:int=Non
         print("No good structure generated")
         return None
     return tests[np.argmin(np.array(energies))], energies[np.argmin(np.array(energies))]
-
-
