@@ -358,36 +358,7 @@ def get_symmetrized_structure(structure: Structure, spacegroup: Union[str, int],
     return structure
 
 
-def structure_from_symmops(symm_ops: List[SymmOp], lattice: Union[List, np.ndarray, Lattice],
-                           species: Sequence[Union[str, Element, Species, DummySpecies, Composition]],
-                           coords: Sequence[Sequence[float]],
-                           coords_are_cartesian: bool = False,
-                           tol: float = 1e-5):
-    if not isinstance(lattice, Lattice):
-        lattice = Lattice(lattice)
 
-    if len(species) != len(coords):
-        raise ValueError(
-            "Supplied species and coords lengths (%d vs %d) are "
-            "different!" % (len(species), len(coords))
-        )
-
-    frac_coords = np.array(coords, dtype=np.float) if not coords_are_cartesian else \
-        lattice.get_fractional_coords(coords)
-
-    all_sp = []  # type: List[Union[str, Element, Species, DummySpecies, Composition]]
-    all_coords = []  # type: List[List[float]]
-    for i, (sp, c) in enumerate(zip(species, frac_coords)):
-        cc = []
-        for o in symm_ops:
-            pp = o.operate(c)
-            pp = np.mod(np.round(pp, decimals=10), 1)
-            if not in_array_list(cc, pp, tol=tol):
-                cc.append(pp)
-        all_sp.extend([sp] * len(cc))
-        all_coords.extend(cc)
-
-    return Structure(lattice, all_sp, all_coords)
 
 
 def merge_structures(*structures: Structure,
