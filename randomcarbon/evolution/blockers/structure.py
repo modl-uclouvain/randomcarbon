@@ -1,11 +1,15 @@
 import logging
-from typing import Optional, Union
+from typing import List, Optional, Union
 from randomcarbon.utils.structure import get_struc_min_dist
 from randomcarbon.evolution.core import Blocker
 from randomcarbon.utils.factory import Factory
 from pymatgen.core.structure import Structure
 from pymatgen.analysis.local_env import NearNeighbors
-
+from randomcarbon.output.taggers import RingsStatsTag, structure
+from randomcarbon.rings.input import RingMethod, RingsInput
+from randomcarbon.rings.run import run_rings
+import math
+from randomcarbon.utils.structure import get_properties, set_properties, get_property
 logger = logging.getLogger(__name__)
 
 
@@ -50,3 +54,48 @@ class MaxNumNeighbors(Blocker):
                 return f"{self.__class__.__name__}. num nn: {num_nn}, max allowed: {self.max_neighbors}"
 
         return None
+class PolygonBlocker(Blocker):
+    """
+    Blocker function that will stop the evolution of the structures if polygons with a given number of sides equals to the parameter nsides than the  is detected
+    inside the structure. It uses the R.I.N.G.S utility to detect the rings and their size. It adds the rings statistics to the structure 
+    as well as the 'rings' property.  
+    """
+    def __init__(self,method: Union[RingMethod, int]=5, lattice_matrix: bool = True,
+                  cutoff_rad: Union[dict, NearNeighbors] = None,
+                 grmax: float = None, executable: str = "rings", irreducible: bool = True, nsides: List[int] = None):
+        
+        self.nsides = [3,4] if nsides is None else cutoff_rad
+
+        self.method = method
+        self.lattice_matrix = lattice_matrix
+        self.maximum_search_depth = int(math.ceil(max(self.nsides)/2))
+        self.cutoff_rad = {("C", "C"): 1.9} if cutoff_rad is None else cutoff_rad
+        self.grmax = grmax
+        self.executable = executable
+        self.irreducible = irreducible
+    def block(self, structure: Structure) -> Optional[str]:
+        
+        inp = RingsInput(structure=structure, methods=[self.method], lattice_matrix=self.lattice_matrix,
+                         maximum_search_depth=self.maximum_search_depth, cutoff_rad=self.cutoff_rad,
+                         grmax=self.grmax) 
+        
+        
+
+        out = run_rings(inp, executable=self.executable, irreducible=self.irreducible)
+        
+        if not out:
+            sid = get_property(structure, "structure_id")
+            logger.warning(f"no output produced by rings for structure {sid}, polygon blocker")
+            return None
+        
+        dict = out[self.method].get_stats_dict()
+        set_properties(structure,  {'rings' : {'stats':dict, 'rings_input':inp } } )
+        if any(ns in dict['size'] for ns in self.nsides):
+            
+            return f"{self.__class__.__name__}. {[ns for ns in self.nsides if ns in dict['size']] }-gon detected in the structure"
+
+        
+        
+
+        return None
+        

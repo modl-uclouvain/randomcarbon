@@ -1,0 +1,54 @@
+# generated using pymatgen
+data_SiO2
+_symmetry_space_group_name_H-M   P6_3/mmc
+_cell_length_a   13.67199986
+_cell_length_b   13.67199986
+_cell_length_c   9.85000000
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   194
+_chemical_formula_structural   SiO2
+_chemical_formula_sum   'Si24 O48'
+_cell_volume   1594.52360488
+_cell_formula_units_Z   24
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  'x-y, x, z+1/2'
+  4  '-x+y, -x, -z+1/2'
+  5  '-y, x-y, z'
+  6  'y, -x+y, -z'
+  7  '-x, -y, z+1/2'
+  8  'x, y, -z+1/2'
+  9  '-x+y, -x, z'
+  10  'x-y, x, -z'
+  11  'y, -x+y, z+1/2'
+  12  '-y, x-y, -z+1/2'
+  13  '-y, -x, -z+1/2'
+  14  'y, x, z+1/2'
+  15  '-x, -x+y, -z'
+  16  'x, x-y, z'
+  17  '-x+y, y, -z+1/2'
+  18  'x-y, -y, z+1/2'
+  19  'y, x, -z'
+  20  '-y, -x, z'
+  21  'x, x-y, -z+1/2'
+  22  '-x, -x+y, z+1/2'
+  23  'x-y, -y, -z'
+  24  '-x+y, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Si  Si0  24  0.10640000  0.44030000  0.59240000  1
+  O  O1  12  0.00000000  0.35650000  0.00000000  1
+  O  O2  12  0.07520000  0.40940000  0.75000000  1
+  O  O3  12  0.13750000  0.56875000  0.56560000  1
+  O  O4  12  0.21295000  0.42590000  0.55360000  1

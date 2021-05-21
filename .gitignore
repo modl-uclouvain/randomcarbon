@@ -62,3 +62,7 @@ _integration_tests_
 
 .spyproject
 .vscode
+
+
+
+*.log

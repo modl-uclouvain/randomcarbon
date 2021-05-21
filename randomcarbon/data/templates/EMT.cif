@@ -1,0 +1,65 @@
+# generated using pymatgen
+data_SiO2
+_symmetry_space_group_name_H-M   P6_3/mmc
+_cell_length_a   17.21499986
+_cell_length_b   17.21499986
+_cell_length_c   28.08200000
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   194
+_chemical_formula_structural   SiO2
+_chemical_formula_sum   'Si96 O192'
+_cell_volume   7207.30189107
+_cell_formula_units_Z   96
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  'x-y, x, z+1/2'
+  4  '-x+y, -x, -z+1/2'
+  5  '-y, x-y, z'
+  6  'y, -x+y, -z'
+  7  '-x, -y, z+1/2'
+  8  'x, y, -z+1/2'
+  9  '-x+y, -x, z'
+  10  'x-y, x, -z'
+  11  'y, -x+y, z+1/2'
+  12  '-y, x-y, -z+1/2'
+  13  '-y, -x, -z+1/2'
+  14  'y, x, z+1/2'
+  15  '-x, -x+y, -z'
+  16  'x, x-y, z'
+  17  '-x+y, y, -z+1/2'
+  18  'x-y, -y, z+1/2'
+  19  'y, x, -z'
+  20  '-y, -x, z'
+  21  'x, x-y, -z+1/2'
+  22  '-x, -x+y, z+1/2'
+  23  'x-y, -y, -z'
+  24  '-x+y, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Si  Si0  24  0.03660000  0.42960000  0.10750000  1
+  Si  Si1  24  0.09640000  0.37010000  0.01790000  1
+  Si  Si2  24  0.15500000  0.48850000  0.19570000  1
+  Si  Si3  24  0.15560000  0.48840000  0.57080000  1
+  O  O4  24  0.06970000  0.43070000  0.60440000  1
+  O  O5  24  0.07060000  0.43100000  0.16110000  1
+  O  O6  24  0.08820000  0.39780000  0.07160000  1
+  O  O7  24  0.13000000  0.45600000  0.51640000  1
+  O  O8  12  0.00000000  0.29140000  0.00000000  1
+  O  O9  12  0.05740000  0.52870000  0.09310000  1
+  O  O10  12  0.12640000  0.45760000  0.25000000  1
+  O  O11  12  0.16780000  0.33560000  0.01620000  1
+  O  O12  12  0.18610000  0.59305000  0.57490000  1
+  O  O13  12  0.18680000  0.59340000  0.19050000  1
+  O  O14  12  0.23615000  0.47230000  0.18100000  1
+  O  O15  12  0.23680000  0.47360000  0.58760000  1

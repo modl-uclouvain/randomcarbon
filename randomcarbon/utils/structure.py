@@ -1,3 +1,4 @@
+from itertools import chain
 import uuid
 import logging
 import numpy as np
@@ -6,12 +7,17 @@ from pymatgen.core.structure import Structure
 from pymatgen.core.lattice import Lattice
 from pymatgen.core.structure import PeriodicSite
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
-from pymatgen.core.periodic_table import Element, Species, DummySpecies
-from pymatgen.core.composition import Composition
+from pymatgen import Element, Species, DummySpecies, Composition
 from pymatgen.core.operations import SymmOp
+from randomcarbon.utils.factory import Factory
 from pymatgen.symmetry.groups import in_array_list
-from pymatgen.util.typing import ArrayLike
-from typing import List, Union, Optional, Any, Tuple, Sequence
+from pymatgen.util.typing import VectorLike as ArrayLike
+from typing import List, Union, Optional, Any, Tuple, Sequence, Dict
+import random 
+
+from pymatgen.io.ase import AseAtomsAdaptor
+from ase.calculators.kim.kim import KIM
+from ase.spacegroup.spacegroup import Spacegroup as SpacegroupAse, get_spacegroup
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +58,59 @@ def get_struc_min_dist(structure1: Structure, structure2: Structure) -> float:
     """
     return get_min_dist(structure1.frac_coords, structure2)
 
+def remove_symmetrized_atom(template: Structure, spacegroup: Union[str, int] = None,
+                             current: Structure = None,
+                             specie: str = "C") -> Structure :
+    """
+    Remove a randomly chosen atom and all the symmetry-equivalent atoms, based on the provided spacegroup. If not provided, the 
+    spacegroup of the template will be used.
 
+    Args:
+        template: Structure of the zeolite template
+        spacegroup: the spacegroup of the carbon structure
+        current: the Structure on which atoms have to be removed
+    """
+    if not current:
+        return None
+    if not spacegroup:
+        spga = SpacegroupAnalyzer(template)
+        spacegroup = spga.get_space_group_number()
+    
+    pos = np.array(current.frac_coords)
+    symstruc = SpacegroupAnalyzer(current).get_symmetrized_structure()
+    removed = [x.frac_coords for x in symstruc.find_equivalent_sites(symstruc[random.randint(0, len(symstruc)-1)])]
+    print(len(removed))
+    new_coords = np.delete(pos, [np.argwhere(e) for e in removed], axis=0)
+    print(len(new_coords))
+    new_species = np.full(len(new_coords), specie)
+    
+    structure = Structure(lattice=template.lattice, species=new_species,
+                              coords=new_coords, coords_are_cartesian=False)
+    
+    return structure
+    
+        
+def remove_symmetrized_atom(structure: Structure, symprec: float = 0.001, angle_tolerance: float = 5.0) -> Structure:
+    """
+    Remove a randomly chosen atom and all the symmetry-equivalent atoms, based on the provided spacegroup. If not provided, the 
+    spacegroup of the template will be used.
+
+    Args:
+        structure: the Structure on which atoms have to be removed
+        symprec: the precision in detecting the spacegroup of the structure
+        angle_tolerance: tolerance on angle symmetry
+
+    Returns:
+        A structure with atoms removed
+    """
+    spga = SpacegroupAnalyzer(structure, symprec=symprec, angle_tolerance=angle_tolerance)
+    ssym = spga.get_symmetrized_structure()
+    indices_to_remove = random.choice(ssym.equivalent_indices)
+    new_s = Structure.from_sites([site for i, site in enumerate(ssym) if i not in indices_to_remove])
+    return new_s
+
+    
+    
 def add_new_symmetrized_atom(template: Structure, spacegroup: Union[str, int] = None,
                              current: Structure = None, supergroup_transf: Tuple[List, List] = None,
                              symm_ops: List[SymmOp] = None, specie: str = "C", max_dist_eq: float = 0.1,
@@ -137,7 +195,7 @@ def add_new_symmetrized_atom(template: Structure, spacegroup: Union[str, int] = 
             if neq == 1:
                 break
             test_coords = np.mean(eq_fcoords, axis=0)
-        else:
+        else: 
             return None
 
         # dist_template = get_min_dist(single[0].frac_coords, template)
@@ -300,36 +358,7 @@ def get_symmetrized_structure(structure: Structure, spacegroup: Union[str, int],
     return structure
 
 
-def structure_from_symmops(symm_ops: List[SymmOp], lattice: Union[List, np.ndarray, Lattice],
-                           species: Sequence[Union[str, Element, Species, DummySpecies, Composition]],
-                           coords: Sequence[Sequence[float]],
-                           coords_are_cartesian: bool = False,
-                           tol: float = 1e-5):
-    if not isinstance(lattice, Lattice):
-        lattice = Lattice(lattice)
 
-    if len(species) != len(coords):
-        raise ValueError(
-            "Supplied species and coords lengths (%d vs %d) are "
-            "different!" % (len(species), len(coords))
-        )
-
-    frac_coords = np.array(coords, dtype=np.float) if not coords_are_cartesian else \
-        lattice.get_fractional_coords(coords)
-
-    all_sp = []  # type: List[Union[str, Element, Species, DummySpecies, Composition]]
-    all_coords = []  # type: List[List[float]]
-    for i, (sp, c) in enumerate(zip(species, frac_coords)):
-        cc = []
-        for o in symm_ops:
-            pp = o.operate(c)
-            pp = np.mod(np.round(pp, decimals=10), 1)
-            if not in_array_list(cc, pp, tol=tol):
-                cc.append(pp)
-        all_sp.extend([sp] * len(cc))
-        all_coords.extend(cc)
-
-    return Structure(lattice, all_sp, all_coords)
 
 
 def merge_structures(*structures: Structure,
@@ -540,6 +569,29 @@ def set_structure_id(structure: Structure) -> Structure:
         set_properties(structure, {"structure_id": structure_id})
     return structure
 
+def symmops_from_spacegroup(spacegroup: int, template: Structure):
+    """
+    Function that will return a list of the symmetry operations of the spacegroup passed in argument.
+    
+    Args:
+        spacegroup: the international spacegroup number
+        lattice: a pymatgen Lattice
+
+    Returns:
+        The list of pymatgen symmetry operations [SymOpp]
+    
+    """
+
+    test_coords = np.random.uniform(0., 1., size=3)
+    spga = SpacegroupAnalyzer(template)
+    template = spga.get_conventional_standard_structure()
+    structure = Structure.from_spacegroup(sg=spacegroup, lattice= template.lattice, species=["C"], coords= [test_coords])
+
+    symm_str = SpacegroupAnalyzer(structure).get_primitive_standard_structure()
+    symm_str = SpacegroupAnalyzer(symm_str)
+    return symm_str.get_symmetry_operations()
+
+
 
 def has_low_energy(structure: Structure, energy_threshold: float) -> bool:
     """
@@ -563,3 +615,125 @@ def has_low_energy(structure: Structure, energy_threshold: float) -> bool:
             return False
         original_energy = original_energy_tot / len(structure)
     return original_energy <= energy_threshold
+
+def extract_random_seed(structure:Structure, number:int=4) -> Structure:
+    """
+    Function that extracts a given number of atoms taken randomly
+    in a structure and returns a new one with those atoms
+    Args:
+        structure: a pymatgen Structure
+        number: number of atoms to be extracted from the structure
+    
+    Returns:
+        the Structure containing the extracted atoms
+    """
+
+
+    seedlist = random.sample(range(0,len(structure)-1), number)
+    return Structure.from_sites(sites=[structure[i] for i in seedlist])
+
+def extract_chain(seed:Structure, lring: int=6, cut_rad :float=2)-> Structure:
+    """
+    Function that extracts a chain of neighbouring atoms (seperated away from each
+    other by the value given by cut_rad). The chain is extracted randomly and has
+    a lenght of lring atoms.
+    Args:
+        seed: a pymatgen Structure on which to extract chain
+        lring: number of atoms in the chain
+        cut_rad: maximum distance between atoms in the chain
+    Returns:
+        the Structure containing the chain
+
+    """
+    
+    nodelist= []
+    nodelist.append(random.randint(0, len(seed)-1))
+    site_fcoords= seed.frac_coords
+    for i in range(1, lring):
+       
+        index = nodelist[i-1]
+        _, _, indices, _ = seed.lattice.get_points_in_sphere_py(site_fcoords, 
+                         center=seed[index].coords, r=cut_rad, zip_results=False)
+        if all(elem in nodelist  for elem in indices):
+            return extract_chain(seed=seed,lring=6, cut_rad= cut_rad+1)
+        for j in indices:
+            
+            node = j            
+            if node not in nodelist:
+                nodelist.append(node)
+                break
+   
+    return Structure.from_sites([seed[i] for i in nodelist])
+
+
+def extract_sym_seed(seed:Structure, template:Structure, spacegroup:int=None, lring:int=6, cut_rad:float=2, temp_dist:float=2, max_tests:int=500, merge_rad:float=1.2):
+    """
+    Function that will extract a part of a Structure, and returned a symmetrized version of it,
+    based on the spacegroup provided. If the spacegroup is not provided, the spacegroup of the template will be used.
+    It will check that the structure is far enough from the template
+    Args:
+        seed: the structure from which the atoms are to be extracted
+        template: the zeolite template
+        spacegroup: the spacegroup used to symmetrize the seed
+        lring: number of atoms to extract
+        cut_rad: radius treshold to merge atoms close to each other
+        temp_dist: distance to the template
+    Returns:
+        A structure symmetrized taken from the seed
+        None if no structure far enough from the zeolite has been found
+    """
+    
+        
+    if spacegroup == None:
+        spacegroup = SpacegroupAnalyzer(template).get_space_group_number() 
+    for i in range(0,max_tests):
+        chain = extract_chain(seed = seed, lring=lring, cut_rad=cut_rad)
+        test = Structure.from_spacegroup(sg=spacegroup, lattice=chain.lattice, species=chain.species, coords=chain.frac_coords)
+        test.merge_sites(merge_rad, "average")
+        dist = get_struc_min_dist(test, template)
+        if dist <= temp_dist:
+            continue
+        return test
+
+
+
+
+
+def extract_best_sym_seed(seed:Structure, template:Structure, spacegroup:int=None, lring:int=6, cut_rad:float=2, temp_dist:float=2 , max_tests:int=10):
+    """
+    Function that will extract a part of a Structure a repeated number of times, and returned the best symmetrized version of it (based on the energy),
+    based on the spacegroup provided. If the spacegroup is not provided, the spacegroup of the template will be used.
+    It will check that the structure is far enough from the template
+    Args:
+        seed: the structure from which the atoms are to be extracted
+        template: the zeolite template
+        spacegroup: the spacegroup used to symmetrize the seed
+        lring: number of atoms to extract
+        cut_rad: radius treshold to merge atoms close to each other
+        temp_dist: distance to the template
+        max_tests: number of chains to be generated in order to get the best one
+    Returns:
+        A structure symmetrized taken from the seed
+        None if no structure far enough from the zeolite has been found
+    """
+    
+    
+    
+    if spacegroup == None:
+        spacegroup = SpacegroupAnalyzer(template).get_space_group_number() 
+    tests = []
+    energies = []
+    for j in range(0,max_tests):
+        test = extract_sym_seed(seed, template, spacegroup, lring, cut_rad, temp_dist)
+        tests.append(test)
+        
+
+        if test != None:
+            Atoms = AseAtomsAdaptor().get_atoms(test)
+            Atoms.calc = KIM("Tersoff_LAMMPS_Tersoff_1989_SiC__MO_171585019474_002")
+            energy = Atoms.get_potential_energy()/Atoms.get_global_number_of_atoms()
+            energies.append(energy)
+    if all(i == energies[0] for i in energies):
+        print("No good structure generated")
+        return None
+    return tests[np.argmin(np.array(energies))], energies[np.argmin(np.array(energies))]

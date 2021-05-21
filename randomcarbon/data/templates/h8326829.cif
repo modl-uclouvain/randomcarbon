@@ -1,0 +1,60 @@
+# generated using pymatgen
+data_SiO2
+_symmetry_space_group_name_H-M   P-6m2
+_cell_length_a   16.46479997
+_cell_length_b   16.46479997
+_cell_length_c   21.45840000
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   187
+_chemical_formula_structural   SiO2
+_chemical_formula_sum   'Si66 O132'
+_cell_volume   5037.79958192
+_cell_formula_units_Z   66
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x+y, -x, -z'
+  3  '-y, x-y, z'
+  4  'x, y, -z'
+  5  '-x+y, -x, z'
+  6  '-y, x-y, -z'
+  7  '-y, -x, -z'
+  8  'x, x-y, z'
+  9  '-x+y, y, -z'
+  10  '-y, -x, z'
+  11  'x, x-y, -z'
+  12  '-x+y, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Si  Si0  12  0.04469000  0.42645000  0.37481000  1
+  Si  Si1  12  0.14539000  0.47660000  0.25090000  1
+  Si  Si2  12  0.42432000  0.04069000  0.18919000  1
+  Si  Si3  12  0.47570000  0.14396000  0.31267000  1
+  Si  Si4  12  0.47649000  0.14325000  0.06913000  1
+  Si  Si5  6  0.14052000  0.47306000  0.50000000  1
+  O  O6  12  0.06412000  0.40507000  0.20391000  1
+  O  O7  12  0.08251000  0.41144000  0.44036000  1
+  O  O8  12  0.11596000  0.43508000  0.32049000  1
+  O  O9  12  0.40597000  0.06156000  0.36013000  1
+  O  O10  12  0.40670000  0.07215000  0.12151000  1
+  O  O11  12  0.43433000  0.11378000  0.24281000  1
+  O  O12  6  0.04254000  0.52127000  0.37664000  1
+  O  O13  6  0.16149000  0.58074500  0.24687000  1
+  O  O14  6  0.23986000  0.47972000  0.23063000  1
+  O  O15  6  0.43735000  0.10254000  0.00000000  1
+  O  O16  6  0.47639000  0.23819500  0.33188000  1
+  O  O17  6  0.48476000  0.24238000  0.07911000  1
+  O  O18  6  0.51835000  0.03670000  0.18951000  1
+  O  O19  6  0.57983000  0.15966000  0.07848000  1
+  O  O20  6  0.58095500  0.16191000  0.31680000  1
+  O  O21  3  0.15108000  0.57554000  0.50000000  1
+  O  O22  3  0.24395500  0.75604500  0.50000000  1
