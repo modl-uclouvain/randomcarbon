@@ -43,6 +43,8 @@ class RingsInput(MSONable):
     An object to describe and write the input for a rings analysis.
     """
 
+    # TODO the NearNeighbors in input may be time consuming, it might not be suitable to run it here.
+    #  Consider if only accepting a dict in the __init__ and add an helper function to generate from NearNeighbors.
     def __init__(self, structure: Structure, methods: List[Union[RingMethod, int]] = None, lattice_matrix: bool = True,
                  maximum_search_depth: int = 5, traj_file_name: str = "structure.xyz",
                  cutoff_rad: Union[dict, NearNeighbors] = None, grmax: float = None):
@@ -210,3 +212,24 @@ class RingsInput(MSONable):
 
             with open("options", "wt") as f:
                 f.write(options_str)
+
+    def __eq__(self, other):
+        """
+        Checks if all the attributes are equivalent.
+        """
+        if self.structure != other.structure:
+            return False
+        if self.methods != other.methods:
+            return False
+        if self.lattice_matrix != other.lattice_matrix:
+            return False
+        if self.maximum_search_depth != other.maximum_search_depth:
+            return False
+        if self.traj_file_name != other.traj_file_name:
+            return False
+        if self.cutoff_rad != other.cutoff_rad:
+            return False
+        if self.grmax != other.grmax:
+            return False
+
+        return True
