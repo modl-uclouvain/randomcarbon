@@ -1,8 +1,7 @@
 import random
 import numpy as np
-from typing import Union, List
-from randomcarbon.evolution.core import Evolver
-from randomcarbon.utils.structure import add_new_symmetrized_atom
+from typing import List
+from randomcarbon.evolution.core import Evolver, Condition
 from pymatgen.core.structure import Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
@@ -15,13 +14,14 @@ class RemoveAtoms(Evolver):
     The symmetry should be identified by the SpaceGroupAnalyzed
     """
 
-    def __init__(self, symprec: float = 0.01, num_atoms: int = 1):
+    def __init__(self, symprec: float = 0.01, num_atoms: int = 1, conditions: List[Condition] = None):
         """
         Args:
             symprec: the symprec value used in spglib to determine the
                 spacegroup of the system and the symmetry equivalent atoms.
             num_atoms: the number of inequivalent atoms to be removed.
         """
+        super().__init__(conditions)
         self.symprec = symprec
         self.num_atoms = num_atoms
 
@@ -55,7 +55,8 @@ class MergeAtoms(Evolver):
 
     def __init__(self, symprec: float = 0.01, num_atoms: int = 2,
                  max_num_atoms: int = None, r: float = 1.6,
-                 atom_centered=True, max_tests: int = 100):
+                 atom_centered=True, max_tests: int = 100,
+                 conditions: List[Condition] = None):
         """
         Args:
             symprec: the symprec value used in spglib to determine the
@@ -71,6 +72,7 @@ class MergeAtoms(Evolver):
             max_tests: the number of maximum test to try to get a sphere with at least
                 num_atoms. Only used if atom_centered is False.
         """
+        super().__init__(conditions)
         self.symprec = symprec
         if num_atoms is not None:
             if num_atoms < 2:

@@ -6,11 +6,42 @@ import random
 import logging
 from abc import ABCMeta, abstractmethod
 from pymatgen.core.structure import Structure
-from typing import List, Union, Optional
+from typing import List, Tuple, Union, Optional
 from monty.json import MSONable
 from randomcarbon.utils.structure import set_structure_id, set_properties, get_property
 
 logger = logging.getLogger(__name__)
+
+
+
+class Condition(MSONable, metaclass=ABCMeta):
+    """
+    Base class for an object that will provide check conditions on a pymatgen
+    structure that is passed.
+
+    Since a bool value should always be returned a default value could be defined in
+    case the evaluation of the condition is not is a possibility that the possible
+    (e.g. ).
+    When needing object like constraint or Calculators, subclasses should
+    use the Factory object to wrap them. This should prevent problems
+    like potential race conditions, storage of partial results
+    in the objects between different runs and the objects not being
+    MSONable.
+    """
+
+    @abstractmethod
+    def satisfied(self, structure: Structure) -> Tuple[bool, Optional[str]]:
+        """
+        Checks if the passed structure fulfills the condition.
+
+        Args:
+            structure: a Structure to be checked.
+
+        Returns:
+            a tuple with a boolean, true if the condition is satisfied and an optional
+            str with a short description of the condition that was either satisfied ot not.
+        """
+        pass
 
 
 class Evolver(MSONable, metaclass=ABCMeta):
@@ -18,12 +49,21 @@ class Evolver(MSONable, metaclass=ABCMeta):
     Base class for the objects that define how to evolve a structure.
     This can include modifying the atoms currently present in the cell.
 
+    Subclasses are expected to accept a list of Conditions that will determine
+    whether the evolver will be applied or not. The list is intended as a
+    logical AND: all the conditions should be satisfied.
+
     When needing object like constraint or Calculators, subclasses should
     use the Factory object to wrap them. This should prevent problems
     like potential race conditions, storage of partial results
     in the objects between different runs and the objects not being
     MSONable.
     """
+
+    def __init__(self, conditions: List[Condition]):
+        if not isinstance(conditions, (tuple, list)):
+            conditions = [conditions]
+        self.conditions = conditions
 
     @abstractmethod
     def evolve(self, structure: Structure) -> List[Structure]:
@@ -106,7 +146,7 @@ class Blocker(MSONable, metaclass=ABCMeta):
 def evolve_structure(
         structure: Structure,
         evolvers: List[Union[Evolver, List]],
-        blockers: List[Blocker] = None,
+        blockers: List[Condition] = None,
         filters: List[Filter] = None
 ) -> List[Structure]:
     """
@@ -128,7 +168,7 @@ def evolve_structure(
         structure (Structure): the structure used as base for the evolution.
         evolvers (list of Evolver): a list of Evolvers to be used to generate
             new structures.
-        blockers (list of Blocker): determine if no further evolution should be
+        blockers (list of Condition): determine if no further evolution should be
             done on the incoming structure.
         filters (list of Filter): a list of Filters that will reduce the amount
             of structures if needed.
@@ -139,8 +179,8 @@ def evolve_structure(
     """
     if blockers:
         for b in blockers:
-            block_msg = b.block(structure)
-            if block_msg:
+            block, block_msg = b.satisfied(structure)
+            if block:
                 logger.info(f"Stopping evolution of structure {get_property(structure, 'structure_id')}: {block_msg}")
                 set_properties(structure, {"block_msg": block_msg})
                 return []

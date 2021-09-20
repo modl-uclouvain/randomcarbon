@@ -8,7 +8,7 @@ from randomcarbon.run.ase import get_energy, relax
 from randomcarbon.run.phonon import get_phonons, extract_instabilities
 from randomcarbon.utils.factory import Factory
 from randomcarbon.utils.structure import get_property, has_low_energy
-from randomcarbon.evolution.core import Evolver, Filter, Blocker
+from randomcarbon.evolution.core import Evolver, Filter, Condition
 try:
     import phonopy
     from phonopy.interface.phonopy_yaml import PhonopyYaml
@@ -44,7 +44,7 @@ class CalculationInfoTag(Tagger):
 class EvolutionInfoTag(Tagger):
 
     def __init__(self, evolvers: List[Union[Evolver, List]] = None,
-                 blockers: List[Blocker] = None,
+                 blockers: List[Condition] = None,
                  filters: List[Filter] = None):
         self.evolvers = evolvers
         self.blockers = blockers

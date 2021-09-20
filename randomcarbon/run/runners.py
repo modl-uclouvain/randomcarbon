@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 from collections import deque
 from randomcarbon.run.ase import relax
 from randomcarbon.run.generator import Generator
-from randomcarbon.evolution.core import Evolver, Filter, Blocker, evolve_structure
+from randomcarbon.evolution.core import Evolver, Filter, Condition, evolve_structure
 from randomcarbon.utils.structure import set_properties, get_properties, to_primitive
 from randomcarbon.utils.structure import to_supercell, set_structure_id, get_property
 from randomcarbon.utils.factory import Factory
@@ -31,7 +31,7 @@ class BaseRunner(ABC):
     """
 
     def __init__(self, calculator_factory: Factory, evolvers: List[Union[Evolver, List]],
-                 blockers: List[Blocker] = None, filters: List[Filter] = None,
+                 blockers: List[Condition] = None, filters: List[Filter] = None,
                  fmax: float = 0.05, steps: int = 1000, constraints: List[Factory] = None,
                  optimizer: str = "BFGS", opt_kwargs: dict = None,
                  allow_not_converged: bool = False, store: Store = None,
@@ -126,7 +126,7 @@ class SequentialRunner(BaseRunner):
     """
 
     def __init__(self, calculator_factory: Factory, evolvers: List[Union[Evolver, List]],
-                 initial_structure: Structure, blockers: List[Blocker] = None, filters: List[Filter] = None,
+                 initial_structure: Structure, blockers: List[Condition] = None, filters: List[Filter] = None,
                  fmax: float = 0.05, steps: int = 1000, constraints: List[Factory] = None,
                  optimizer: str = "BFGS", opt_kwargs: dict = None,
                  allow_not_converged: bool = False, store: Store = None,
@@ -215,7 +215,7 @@ class MultiStructureRunner(BaseRunner):
     """
     def __init__(self, calculator_factory: Factory, evolvers: List[Union[Evolver, List]],
                  generator: Generator, inner_runner: str = "SerialRunner",
-                 blockers: List[Blocker] = None, filters: List[Filter] = None, fmax: float = 0.05, steps: int = 1000,
+                 blockers: List[Condition] = None, filters: List[Filter] = None, fmax: float = 0.05, steps: int = 1000,
                  constraints: List[Factory] = None, optimizer: str = "BFGS", opt_kwargs: dict = None,
                  allow_not_converged: bool = False, store: Store = None,
                  spacegroup_primitive: int = None, taggers: List[Tagger] = None):
@@ -260,7 +260,7 @@ class ParallelRunner(BaseRunner):
 
     def __init__(self, calculator_factory: Factory, evolvers: List[Union[Evolver, List]],
                  initial_structures: List[Structure], inner_runner: str = "SerialRunner",
-                 blockers: List[Blocker] = None, filters: List[Filter] = None, fmax: float = 0.05, steps: int = 1000,
+                 blockers: List[Condition] = None, filters: List[Filter] = None, fmax: float = 0.05, steps: int = 1000,
                  constraints: List[Factory] = None, optimizer: str = "BFGS", opt_kwargs: dict = None,
                  allow_not_converged: bool = False, store: Store = None,
                  spacegroup_primitive: int = None, taggers: List[Tagger] = None):
@@ -309,7 +309,7 @@ class BranchingParallelRunner(BaseRunner):
 
     def __init__(self, calculator_factory: Factory, evolvers: List[Union[Evolver, List]],
                  initial_structures: Union[Structure, List[Structure]],
-                 blockers: List[Blocker] = None, filters: List[Filter] = None,
+                 blockers: List[Condition] = None, filters: List[Filter] = None,
                  fmax: float = 0.05, steps: int = 1000, constraints: List[Factory] = None,
                  optimizer: str = "BFGS", opt_kwargs: dict = None,
                  allow_not_converged: bool = False, store: Store = None,

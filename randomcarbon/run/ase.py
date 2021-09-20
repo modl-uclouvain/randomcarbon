@@ -79,7 +79,7 @@ def relax(structure: Structure, calculator: Union[Calculator, Factory],
 
 
 def get_energy(structure: Structure, calculator: Union[Calculator, Factory],
-               constraints: list = None, set_in_structure: bool = False) -> Optional[Structure]:
+               constraints: list = None, set_in_structure: bool = False) -> float:
     """
         Helper function to get the energy with ASE, based on the typical inputs
         in the package.

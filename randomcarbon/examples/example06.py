@@ -6,8 +6,8 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.analysis.local_env import CutOffDictNN
 from randomcarbon.run.runners import BranchingParallelRunner
 from randomcarbon.evolution.evolvers.grow import AddSymmAtom
-from randomcarbon.evolution.blockers.structure import MinTemplateDistance
-from randomcarbon.evolution.blockers.energy import EnergyAtoms
+from randomcarbon.evolution.conditions.structure import TemplateDistance
+from randomcarbon.evolution.conditions.energy import SmallEnergyAtoms
 from randomcarbon.utils.factory import Factory
 from randomcarbon.evolution.filters.limit import MatchingStructures
 from randomcarbon.data import get_template
@@ -42,8 +42,8 @@ calculator = Factory(callable=KIM, model_name="Tersoff_LAMMPS_Tersoff_1989_SiC__
 evolvers = [AddSymmAtom(template=template, num_structures=10, max_tests=100, symm_ops=symm_ops)]
 sm = StructureMatcher(primitive_cell=False, stol=0.001, scale=False)
 filters = [MatchingStructures(sm)]
-blockers = [MinTemplateDistance(template, min_dist=3),
-            EnergyAtoms(criteria={600: -4, 700: -4.5, 800: -5}, calculator=calculator, constraints=constraints)]
+blockers = [TemplateDistance(template, max_dist=3),
+            SmallEnergyAtoms(criteria={600: -4, 700: -4.5, 800: -5}, calculator=calculator, constraints=constraints)]
 taggers = get_basic_taggers(template=template, info={"run_name": "example3", "zeolite": "FAU"},
                             calculator=calculator, constraints=constraints)
 taggers += get_calc_taggers(calculator=calculator, optimizer="BFGS", fmax=0.05)

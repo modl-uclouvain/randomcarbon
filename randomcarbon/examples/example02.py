@@ -4,7 +4,7 @@ from randomcarbon.utils.structure import add_new_symmetrized_atom, get_struc_min
 from pymatgen.core.structure import Structure
 from randomcarbon.run.runners import BranchingRunner
 from randomcarbon.evolution.evolvers.grow import AddSymmAtom
-from randomcarbon.evolution.blockers.structure import MinTemplateDistance
+from randomcarbon.evolution.conditions.structure import TemplateDistance
 from randomcarbon.utils.factory import Factory
 from randomcarbon.evolution.filters.limit import MaxEnergyPerAtom
 from randomcarbon.evolution.filters.sort import EnergySort
@@ -19,7 +19,7 @@ logging.basicConfig(format="%(asctime)s %(name)-12s %(levelname)-8s %(message)s"
 logger = logging.getLogger("randomcarbon")
 logger.setLevel(logging.INFO)
 
-template = Structure.from_file(get_template("FAU_zeolite_conv_std.cif"))
+template = Structure.from_file(get_template("FAU.cif"))
 
 initial_structure = add_new_symmetrized_atom(template=template)
 print("initial min dist: ", get_struc_min_dist(template, initial_structure))
@@ -30,7 +30,7 @@ calculator = Factory(callable=KIM, model_name="Tersoff_LAMMPS_Tersoff_1989_SiC__
 
 evolvers = [AddSymmAtom(template=template, num_structures=10, max_tests=100)]
 filters = [MaxEnergyPerAtom(calculator=calculator, max_energy=0), EnergySort(calculator=calculator, constraints=constraints)]
-blockers = [MinTemplateDistance(template, min_dist=3)]
+blockers = [TemplateDistance(template, max_dist=3)]
 taggers = [BasicTag(), EnergyTag(calculator=calculator), SymmetryTag(full=True)]
 
 store = MultiJsonStore(os.path.expanduser("~/test_example"))

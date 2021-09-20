@@ -4,7 +4,7 @@ from randomcarbon.utils.structure import add_new_symmetrized_atom, get_struc_min
 from pymatgen.core.structure import Structure
 from randomcarbon.run.runners import BranchingParallelRunner
 from randomcarbon.evolution.evolvers.grow import AddSymmAtom
-from randomcarbon.evolution.blockers.structure import MinTemplateDistance
+from randomcarbon.evolution.conditions.structure import TemplateDistance
 from randomcarbon.utils.factory import Factory
 from randomcarbon.evolution.filters.limit import MaxEnergyPerAtom
 from randomcarbon.evolution.filters.sort import EnergySort
@@ -30,7 +30,7 @@ calculator = Factory(callable=KIM, model_name="Tersoff_LAMMPS_Tersoff_1989_SiC__
 
 evolvers = [AddSymmAtom(template=template, num_structures=10, max_tests=100, spacegroup=216)]
 filters = [MaxEnergyPerAtom(calculator=calculator, max_energy=0), EnergySort(calculator=calculator, constraints=constraints)]
-blockers = [MinTemplateDistance(template, min_dist=3)]
+blockers = [TemplateDistance(template, max_dist=3)]
 taggers = get_basic_taggers(template=template, info={"run_name": "example4", "zeolite": "FAU", "subgroup": 216},
                             calculator=calculator, constraints=constraints)
 
