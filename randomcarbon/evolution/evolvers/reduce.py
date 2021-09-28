@@ -25,7 +25,7 @@ class RemoveAtoms(Evolver):
         self.symprec = symprec
         self.num_atoms = num_atoms
 
-    def evolve(self, structure: Structure) -> List[Structure]:
+    def _evolve(self, structure: Structure) -> List[Structure]:
         spga = SpacegroupAnalyzer(structure, symprec=self.symprec)
         sym_structure = spga.get_symmetrized_structure()
         inequivalent_sites = [l[0] for l in sym_structure.equivalent_sites]
@@ -85,7 +85,7 @@ class MergeAtoms(Evolver):
         self.atom_centered = atom_centered
         self.max_tests = max_tests
 
-    def evolve(self, structure: Structure) -> List[Structure]:
+    def _evolve(self, structure: Structure) -> List[Structure]:
         spga = SpacegroupAnalyzer(structure, symprec=self.symprec)
         sym_structure = spga.get_symmetrized_structure()
         latt = sym_structure.lattice

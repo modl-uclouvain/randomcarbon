@@ -36,6 +36,8 @@ class SmallEnergyAtoms(Condition):
                            set_in_structure=True)
         nsites = len(structure)
 
+        e /= nsites
+
         for n_threshold, e_threshold in self.criteria.items():
             if nsites > n_threshold and e > e_threshold:
                 return True, f"{self.__class__.__name__}. nsites: {nsites}, energy: {e}"

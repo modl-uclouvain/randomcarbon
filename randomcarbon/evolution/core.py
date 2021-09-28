@@ -65,10 +65,28 @@ class Evolver(MSONable, metaclass=ABCMeta):
             conditions = [conditions]
         self.conditions = conditions
 
-    @abstractmethod
     def evolve(self, structure: Structure) -> List[Structure]:
         """
-        The method that performs the modification of the structure.
+        Generates a new list of Structures based on the one in input.
+
+        Args:
+            structure: a pymatgen structure that should be modified
+
+        Returns:
+            List[Structure]: list of modified structures. If meaningful
+                sorted in decreasing order of preference for new structures
+                to be picked.
+        """
+        if all(c.satisfied(structure)[0] for c in self.conditions):
+            return self._evolve(structure)
+        else:
+            return []
+
+    @abstractmethod
+    def _evolve(self, structure: Structure) -> List[Structure]:
+        """
+        The method that performs the modification of the structure
+        if the conditions are satisfied.
         Should return a list of modified structures, if only one
         structure is generated should be a list with one structure.
         If some structures are favorite they should be returned

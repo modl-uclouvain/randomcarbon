@@ -37,7 +37,7 @@ class AddSymmAtom(Evolver):
         self.angle_tolerance = angle_tolerance
         self.num_atoms = num_atoms
 
-    def evolve(self, structure: Structure) -> List[Structure]:
+    def _evolve(self, structure: Structure) -> List[Structure]:
         new_structures = []
         for i in range(self.num_structures):
             ns = structure
@@ -87,7 +87,7 @@ class AddSymmC2(Evolver):
         self.symprec = symprec
         self.angle_tolerance = angle_tolerance
 
-    def evolve(self, structure: Structure) -> List[Structure]:
+    def _evolve(self, structure: Structure) -> List[Structure]:
         new_structures = []
         for i in range(self.num_structures):
             ns = add_c2_symmetrized(template=self.template, spacegroup=self.spacegroup, symm_ops=self.symm_ops,
@@ -141,7 +141,7 @@ class AddSymmAtomUndercoord(Evolver):
         self.angle_tolerance = angle_tolerance
         self.num_atoms = num_atoms
 
-    def evolve(self, structure: Structure) -> List[Structure]:
+    def _evolve(self, structure: Structure) -> List[Structure]:
         new_structures = []
         for i in range(self.num_structures):
             ns = structure
@@ -200,7 +200,7 @@ class AddSymmAtomBridge(Evolver):
         self.angle_tolerance = angle_tolerance
         self.num_atoms = num_atoms
 
-    def evolve(self, structure: Structure) -> List[Structure]:
+    def _evolve(self, structure: Structure) -> List[Structure]:
         new_structures = []
         for i in range(self.num_structures):
             ns = structure
