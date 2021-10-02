@@ -19,7 +19,7 @@ def find_largest_tube_direction(structure: Structure, vector: Union[List, Tuple]
     face_axis = np.argmax(vector)
 
     # generate a 2d grid of points that will cover one face
-    n_grid = [int(np.ceil(i / grid_density)) for i in structure.lattice.abc if i != face_axis]
+    n_grid = [int(np.ceil(structure.lattice.abc[i] / grid_density)) for i in range(3) if i != face_axis]
 
     coords_list = [np.linspace(0, 1, n, endpoint=False) for n in n_grid]
     grid_frac_coords = np.vstack(np.meshgrid(*coords_list)).reshape(2, -1).T
