@@ -8,7 +8,7 @@ from pymatgen.analysis.local_env import NearNeighbors
 from randomcarbon.rings.input import RingMethod, RingsInput
 from randomcarbon.rings.run import run_rings
 import math
-from randomcarbon.utils.structure import get_properties, set_properties, get_property
+from randomcarbon.utils.structure import set_properties, get_property
 logger = logging.getLogger(__name__)
 
 

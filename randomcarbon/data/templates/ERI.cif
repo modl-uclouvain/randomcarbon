@@ -1,0 +1,76 @@
+# CIF file created by ISOCIF, version 3.0.3               
+# Space Group: 194 P6_3/mmc   D6h-4
+# Lattice parameters: a=13.05400, b=13.05400, c=15.17500, alpha=90.00000, beta=90.00000, gamma=120.00000
+# O1 12k (x,2x,z), x=0.12890, z=-0.37190
+# O2 24l (x,y,z), x=0.03600, y=0.34740, z=0.16340
+# O3 12k (x,2x,z), x=0.09570, z=0.11390
+# O4 12i (x,0,0), x=0.27050
+# O5 6h (x,2x,1/4), x=0.23560
+# O6 6h (x,2x,1/4), x=0.46215
+# T1 24l (x,y,z), x=0.00060, y=0.23450, z=0.10140
+# T2 12j (x,y,1/4), x=0.09610, y=0.42610
+
+data_isocif-output
+_audit_creation_method ISOCIF
+
+_cell_length_a    13.05400
+_cell_length_b    13.05400
+_cell_length_c    15.17500
+_cell_angle_alpha 90.00000
+_cell_angle_beta  90.00000
+_cell_angle_gamma 120.00000
+_cell_volume      2239.47670
+
+_symmetry_space_group_name_H-M "P 63/m 2/m 2/c"
+_symmetry_Int_Tables_number 194
+_space_group.reference_setting '194:-P 6c 2c'
+_space_group.transform_Pp_abc a,b,c;0,0,0
+
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 x,y,z
+2 x-y,x,z+1/2
+3 -y,x-y,z
+4 -x,-y,z+1/2
+5 -x+y,-x,z
+6 y,-x+y,z+1/2
+7 x-y,-y,-z
+8 x,x-y,-z+1/2
+9 y,x,-z
+10 -x+y,y,-z+1/2
+11 -x,-x+y,-z
+12 -y,-x,-z+1/2
+13 -x,-y,-z
+14 -x+y,-x,-z+1/2
+15 y,-x+y,-z
+16 x,y,-z+1/2
+17 x-y,x,-z
+18 -y,x-y,-z+1/2
+19 -x+y,y,z
+20 -x,-x+y,z+1/2
+21 -y,-x,z
+22 x-y,-y,z+1/2
+23 x,x-y,z
+24 y,x,z+1/2
+
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+_atom_site_fract_symmform
+O1 O   12 k 0.12890 0.25780  0.62810 1.00000 Dx,2Dx,Dz 
+O2 O   24 l 0.03600 0.34740  0.16340 1.00000 Dx,Dy,Dz  
+O3 O   12 k 0.09570 0.19140  0.11390 1.00000 Dx,2Dx,Dz 
+O4 O   12 i 0.27050 0.00000  0.00000 1.00000 Dx,0,0    
+O5 O    6 h 0.23560 0.47120  0.25000 1.00000 Dx,2Dx,0  
+O6 O    6 h 0.46215 -0.07570 0.25000 1.00000 Dx,2Dx,0  
+T1 Si  24 l 0.00060 0.23450  0.10140 1.00000 Dx,Dy,Dz  
+T2 Si  12 j 0.09610 0.42610  0.25000 1.00000 Dx,Dy,0   
+
+# end of cif

@@ -1,5 +1,5 @@
 from typing import Union, List, Tuple
-from randomcarbon.evolution.core import Evolver
+from randomcarbon.evolution.core import Evolver, Condition
 from randomcarbon.utils.structure import add_new_symmetrized_atom, add_c2_symmetrized
 from randomcarbon.utils.structure import add_new_symmetrized_atom_bridge, add_new_symmetrized_atom_undercoord
 from pymatgen.core.structure import Structure
@@ -19,7 +19,8 @@ class AddSymmAtom(Evolver):
                  max_dist_current: float = 1.6, min_dist_from_template: float = 3,
                  max_dist_from_template: float = None, max_tests: int = 1000,
                  supergroup_transf: Tuple[List, List] = None, symprec: float = 0.001,
-                 angle_tolerance: float = 5.0, num_atoms: int = 1):
+                 angle_tolerance: float = 5.0, num_atoms: int = 1, conditions: List[Condition] = None):
+        super().__init__(conditions)
         self.template = template
         self.num_structures = num_structures
         self.spacegroup = spacegroup
@@ -36,7 +37,7 @@ class AddSymmAtom(Evolver):
         self.angle_tolerance = angle_tolerance
         self.num_atoms = num_atoms
 
-    def evolve(self, structure: Structure) -> List[Structure]:
+    def _evolve(self, structure: Structure) -> List[Structure]:
         new_structures = []
         for i in range(self.num_structures):
             ns = structure
@@ -68,7 +69,8 @@ class AddSymmC2(Evolver):
                  min_dist_current: Union[List[float], float] = 1.2, max_dist_current: Union[List[float], float] = 1.6,
                  min_dist_from_template: float = 3, max_dist_from_template: float = None,
                  min_dist_cc: float = 1.2, max_dist_cc: float = 1.6, max_tests: int = 1000,
-                 symprec: float = 0.001, angle_tolerance: float = 5.0):
+                 symprec: float = 0.001, angle_tolerance: float = 5.0, conditions: List[Condition] = None):
+        super().__init__(conditions)
         self.template = template
         self.num_structures = num_structures
         self.spacegroup = spacegroup
@@ -85,7 +87,7 @@ class AddSymmC2(Evolver):
         self.symprec = symprec
         self.angle_tolerance = angle_tolerance
 
-    def evolve(self, structure: Structure) -> List[Structure]:
+    def _evolve(self, structure: Structure) -> List[Structure]:
         new_structures = []
         for i in range(self.num_structures):
             ns = add_c2_symmetrized(template=self.template, spacegroup=self.spacegroup, symm_ops=self.symm_ops,
@@ -117,7 +119,8 @@ class AddSymmAtomUndercoord(Evolver):
                  max_dist_current: float = 1.6, min_dist_from_template: float = 3,
                  max_dist_from_template: float = None, max_tests: int = 1000,
                  supergroup_transf: Tuple[List, List] = None, symprec: float = 0.001,
-                 angle_tolerance: float = 5.0, num_atoms: int = 1):
+                 angle_tolerance: float = 5.0, num_atoms: int = 1, conditions: List[Condition] = None):
+        super().__init__(conditions)
         self.template = template
         self.num_structures = num_structures
         self.cutoff = cutoff
@@ -138,7 +141,7 @@ class AddSymmAtomUndercoord(Evolver):
         self.angle_tolerance = angle_tolerance
         self.num_atoms = num_atoms
 
-    def evolve(self, structure: Structure) -> List[Structure]:
+    def _evolve(self, structure: Structure) -> List[Structure]:
         new_structures = []
         for i in range(self.num_structures):
             ns = structure
@@ -174,7 +177,8 @@ class AddSymmAtomBridge(Evolver):
                  max_dist_current: float = 1.6, min_dist_from_template: float = 3,
                  max_dist_from_template: float = None, max_tests: int = 1000,
                  supergroup_transf: Tuple[List, List] = None, symprec: float = 0.001,
-                 angle_tolerance: float = 5.0, num_atoms: int = 1):
+                 angle_tolerance: float = 5.0, num_atoms: int = 1, conditions: List[Condition] = None):
+        super().__init__(conditions)
         self.template = template
         self.num_structures = num_structures
         self.cutoff = cutoff
@@ -196,7 +200,7 @@ class AddSymmAtomBridge(Evolver):
         self.angle_tolerance = angle_tolerance
         self.num_atoms = num_atoms
 
-    def evolve(self, structure: Structure) -> List[Structure]:
+    def _evolve(self, structure: Structure) -> List[Structure]:
         new_structures = []
         for i in range(self.num_structures):
             ns = structure

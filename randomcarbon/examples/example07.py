@@ -1,3 +1,4 @@
+import os
 import logging
 from randomcarbon.utils.structure import add_new_symmetrized_atom
 from pymatgen.core.structure import Structure
@@ -6,12 +7,12 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.analysis.local_env import CutOffDictNN
 from randomcarbon.run.runners import BranchingParallelRunner
 from randomcarbon.evolution.evolvers.grow import AddSymmAtom
-from randomcarbon.evolution.conditions.structure import TemplateDistance
+from randomcarbon.evolution.conditions.structure import TemplateDistance, NumAtoms
 from randomcarbon.evolution.conditions.energy import SmallEnergyAtoms
 from randomcarbon.utils.factory import Factory
 from randomcarbon.evolution.filters.limit import MatchingStructures
 from randomcarbon.data import get_template
-from randomcarbon.output.store import MongoStore
+from randomcarbon.output.store import MongoStore, MultiJsonStore
 from randomcarbon.output.taggers import get_basic_taggers, get_calc_taggers, RingsStatsTag, NumNeighborsTag
 from ase.calculators.kim.kim import KIM
 from ase.spacegroup.symmetrize import FixSymmetry
@@ -39,7 +40,10 @@ constraints = [Factory(callable=FixSymmetry, set_atoms=True)]
 # calculator = Factory(callable=KIM, model_name="Sim_LAMMPS_AIREBO_Morse_OConnorAndzelmRobbins_2015_CH__SM_460187474631_000")
 calculator = Factory(callable=KIM, model_name="Tersoff_LAMMPS_Tersoff_1989_SiC__MO_171585019474_002")
 
-evolvers = [AddSymmAtom(template=template, num_structures=10, max_tests=100, symm_ops=symm_ops)]
+# two evolvers, one will generate new structures when the input structure has <= 70 atoms, the second will generate
+# structures when the input has >= 71 atoms.
+evolvers = [AddSymmAtom(template=template, num_structures=2, max_tests=100, symm_ops=symm_ops, conditions=[NumAtoms(max_sites=70)]),
+            AddSymmAtom(template=template, num_structures=3, max_tests=100, symm_ops=symm_ops, conditions=[NumAtoms(min_sites=71)])]
 sm = StructureMatcher(primitive_cell=False, stol=0.001, scale=False)
 filters = [MatchingStructures(sm)]
 blockers = [TemplateDistance(template, max_dist=3),
@@ -47,12 +51,11 @@ blockers = [TemplateDistance(template, max_dist=3),
 taggers = get_basic_taggers(template=template, info={"run_name": "example3", "zeolite": "FAU"},
                             calculator=calculator, constraints=constraints)
 taggers += get_calc_taggers(calculator=calculator, optimizer="BFGS", fmax=0.05)
-taggers.append(RingsStatsTag(method=5, maximum_search_depth=5, cutoff_rad={("C", "C"): 1.9},
-                             executable="/path/to/rings/executable"))
 taggers.append(NumNeighborsTag(CutOffDictNN({("C", "C"): 1.9})))
 
-store = MongoStore(database="database_name", collection_name="collection_name", host="host.com", port=27017,
-                   username="username", password="password")
+store = MultiJsonStore(os.path.expanduser("~/test_example"))
+# store = MongoStore(database="database_name", collection_name="collection_name", host="host.com", port=27017,
+#                    username="username", password="password")
 
 runner = BranchingParallelRunner(calculator_factory=calculator, evolvers=evolvers,
                                  initial_structures=initial_structures, blockers=blockers, filters=filters,
