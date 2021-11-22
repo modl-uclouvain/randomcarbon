@@ -88,7 +88,7 @@ def find_largest_tube_direction(structure: Structure, vector: Union[List, Tuple]
     
     if vector not in [[1,0,0],[0,1,0],[0,0,1]]:
         nn = np.max(np.abs(vector))
-        supercell_l = [(nn+1) if vector[i] !=0 else (nn+1) for i in range(3)]
+        supercell_l = [(nn+1) for i in range(3)]
         supercell.make_supercell(supercell_l)
     else: 
         supercell_l = [1,1,1]
@@ -144,7 +144,7 @@ def find_tubes(structure: Structure, grid_density: float = 0.1,n: int = 3) -> Li
                     directions.remove(to_remove)
                 except ValueError:
                     pass
-    sym_ds = SpacegroupAnalyzer(structure,symprec=0.02,angle_tolerance=6.0).get_symmetry_dataset()
+    sym_ds = SpacegroupAnalyzer(structure,symprec=0.01,angle_tolerance=5.0).get_symmetry_dataset()
     if sym_ds:
         T = sym_ds["rotations"]
         to_compute = []
