@@ -110,7 +110,7 @@ def find_largest_tube_direction(structure: Structure, vector: Union[List, Tuple]
     return center_point,radius
 
 
-def find_tubes(structure: Structure, grid_density: float = 0.1,n: int = 3) -> List:
+def find_tubes(structure: Structure, grid_density: float = 0.1,n: int = 3, symprec: float = 0.01, angle_tolerance: float = 5.0) -> List:
     """
     Given a structure, a grid density and an integer n, it generates all the directions between (-n,-n,-n) and (n,n,n),
     it removes the equivalent directions taking into account the symmetry of the structure and it returns the largest tube
@@ -121,6 +121,8 @@ def find_tubes(structure: Structure, grid_density: float = 0.1,n: int = 3) -> Li
        structure: the structure where the tubes have to be found
        grid_density: the density of the grid on a face in 1D
        n: the maximum dimension the directions' indices
+       symprec: tolerance for symmetry finding
+       angle_tolerance: angle tolerance for symmetry finding
 
     Returns:
         a list of tuples of direction, center point, radius for the largest tube in each inequivalent directions
@@ -144,7 +146,7 @@ def find_tubes(structure: Structure, grid_density: float = 0.1,n: int = 3) -> Li
                     directions.remove(to_remove)
                 except ValueError:
                     pass
-    sym_ds = SpacegroupAnalyzer(structure,symprec=0.01,angle_tolerance=5.0).get_symmetry_dataset()
+    sym_ds = SpacegroupAnalyzer(structure=structure,symprec=symprec,angle_tolerance=angle_tolerance).get_symmetry_dataset()
     if sym_ds:
         T = sym_ds["rotations"]
         to_compute = []
@@ -166,7 +168,7 @@ def find_tubes(structure: Structure, grid_density: float = 0.1,n: int = 3) -> Li
     return results
 
 
-def find_largest_tube(structure: Structure, grid_density: float = 0.1,n: int = 3) -> Tuple:
+def find_largest_tube(structure: Structure, grid_density: float = 0.1,n: int = 3, symprec: float = 0.01, angle_tolerance: float = 5.0) -> Tuple:
     """
     Given a structure, a grid density and an integer n, it returns the direction, the radius and the center point of the 
     largest tube. The grid density specifies how many points have to be explored as potential center points
@@ -176,12 +178,15 @@ def find_largest_tube(structure: Structure, grid_density: float = 0.1,n: int = 3
         structure: the structure where the tube has to be found
         grid_density: the density of the grid on a face in 1D
         n: the maximum dimension the directions' indices
-    
+        symprec: tolerance for symmetry finding
+        angle_tolerance: angle tolerance for symmetry finding
+
+
     Returns:
         the direction, the center point and the radius of the largest tube in the structure
 
     """
-    tubes = find_tubes(structure=structure, grid_density=grid_density, n=n)
+    tubes = find_tubes(structure=structure, grid_density=grid_density, n=n,symprec=symprec,angle_tolerance=angle_tolerance)
 
     largest = max(tubes, key=lambda x: x[2])
 
