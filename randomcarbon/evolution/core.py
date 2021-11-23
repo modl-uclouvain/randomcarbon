@@ -61,6 +61,8 @@ class Evolver(MSONable, metaclass=ABCMeta):
     """
 
     def __init__(self, conditions: List[Condition]):
+        if conditions is None:
+            conditions = []
         if not isinstance(conditions, (tuple, list)):
             conditions = [conditions]
         self.conditions = conditions

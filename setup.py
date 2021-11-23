@@ -14,6 +14,7 @@ setup(
     name='randomcarbon',
     version='0.1',
     packages=find_packages(),
+    package_data=find_package_data(),
     url='',
     license='',
     author='',

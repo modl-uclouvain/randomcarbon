@@ -8,7 +8,8 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from randomcarbon.output.store import MongoStore
 
 
-def deduplicate_list(structures: List[Structure], stol: float = 0.03, primitive: bool = True) -> List[int]:
+def deduplicate_list(structures: List[Structure], stol: float = 0.03, primitive: bool = True,
+                     method: str = "structurematcher") -> List[int]:
 
     # if required, do the preprocessing for all the structures before. no scaling.
     if primitive:

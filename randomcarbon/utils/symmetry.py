@@ -1,3 +1,4 @@
+import numpy as np
 from typing import Tuple, List, Optional, Union
 from monty.dev import requires
 from pymatgen.core.structure import Structure
@@ -161,3 +162,189 @@ def get_subgroups(spgn: int, recursive: bool = False, group_type: str = 't') -> 
         return subgroups_dict
     else:
         return subgroups
+
+
+def get_equivalent_indices(structure: Structure, symm_ops: List[SymmOp] = None, symprec: float = 0.001,
+                           spgn: int = None) -> Optional[np.ndarray]:
+    """
+    Determines the list of equivalent atoms according to the symmetries. If the list of symmetry
+    operations are passed these will be used to determine the equivalent atoms, otherwise
+    they will be determined by spglib.
+
+    Args:
+        structure: the structure from which the equivalent points should be extracted.
+        symm_ops: the optional list of symmetry operations of the structure.
+        symprec: tolerance allowed to determine if two atoms are equivalent. Used both
+            for the procedure based on the list of symmetry operations or on spglib.
+        spgn: if not None represents the expected spacegroup that should be identified
+            by spglib.
+
+    Returns:
+        a list of equivalent atoms in the same format as provided by spglib.
+        If spgn is not None and does not match what found by spglib returns None.
+    """
+
+    if symm_ops is not None:
+        id4 = np.eye(4)
+        symm_ops = [s for s in symm_ops if not np.array_equal(s.affine_matrix, id4)]
+        ind_species = {sp: list(structure.indices_from_symbol(sp)) for sp in structure.symbol_set}
+
+        eq_ind = np.arange(len(structure), dtype=np.int)
+
+        for sp, ind_sp_l in ind_species.items():
+            for i in range(1, len(ind_sp_l)):
+                ind_site = ind_sp_l[i]
+                for symm_op in symm_ops:
+                    trasf_coords = symm_op.operate(structure[ind_site].frac_coords)
+                    dist = structure.lattice.get_all_distances(trasf_coords, structure.frac_coords[ind_sp_l][:i])
+                    eq_to_site = np.where(dist < symprec)[1]
+                    if len(eq_to_site) > 0:
+                        ind_ref = ind_sp_l[eq_to_site[0]]
+                        if ind_ref < ind_site:
+                            eq_ind[ind_site] = eq_ind[ind_ref]
+                            break
+
+        return eq_ind
+    # This version seems to mimic the implementation in spglib, but it does not seem to
+    # have any advantage over the previous one and does additional operation. Leave it in case further
+    # tests are needed.
+    # if symm_ops is not None:
+    #     id3 = np.eye(3)
+    #     id4 = np.eye(4)
+    #     symm_ops = [s for s in symm_ops if not np.array_equal(s.affine_matrix, id4)]
+    #     ind_species = {sp: list(structure.indices_from_symbol(sp)) for sp in structure.symbol_set}
+    #     mapping_trasl = np.arange(len(structure), dtype=np.int)
+    #     for sp, ind_sp_l in ind_species.items():
+    #         for i in range(1, len(ind_sp_l)):
+    #             ind_site = ind_sp_l[i]
+    #             for symm_op in symm_ops:
+    #                 if not np.array_equal(symm_op.rotation_matrix, id3):
+    #                     continue
+    #                 trasf_coords = symm_op.operate(structure[ind_site].frac_coords)
+    #                 dist = structure.lattice.get_all_distances(trasf_coords, structure.frac_coords[ind_sp_l[:i]])
+    #                 eq_to_site = np.where(dist < symprec)[1]
+    #                 if len(eq_to_site) > 0:
+    #                     ind_ref = ind_sp_l[eq_to_site[0]]
+    #                     if ind_ref < ind_site:
+    #                         mapping_trasl[ind_site] = mapping_trasl[ind_ref]
+    #                         break
+    #
+    #     eq_ind = np.arange(len(structure), dtype=np.int)
+    #
+    #     for sp, ind_sp_l in ind_species.items():
+    #         for i in range(1, len(ind_sp_l)):
+    #             ind_site = ind_sp_l[i]
+    #             for symm_op in symm_ops:
+    #                 trasf_coords = symm_op.operate(structure[ind_site].frac_coords)
+    #                 dist = structure.lattice.get_all_distances(trasf_coords, structure.frac_coords[ind_sp_l][:i])
+    #                 eq_to_site = np.where(dist < symprec)[1]
+    #                 if len(eq_to_site) > 0:
+    #                     ind_ref = mapping_trasl[ind_sp_l[eq_to_site[0]]]
+    #                     if ind_ref < ind_site:
+    #                         eq_ind[ind_site] = eq_ind[ind_ref]
+    #                         break
+    #
+    #     for i in range(1, len(structure)):
+    #         if mapping_trasl[i] != i:
+    #             eq_ind[i] = eq_ind[mapping_trasl[i]]
+    #
+    #     return eq_ind
+    else:
+        spga = SpacegroupAnalyzer(structure, symprec=symprec)
+        space_group_data = spga.get_symmetry_dataset()
+        if spgn is not None and spgn != space_group_data["number"]:
+            return None
+
+        return space_group_data["equivalent_atoms"]
+
+
+def unequivalent_ind(records_array: List[int]):
+    """
+    Helper function that converts the list of equivalent atoms provided by spglib to a list
+    of indices of equivalent atoms.
+    spglib returns a list in this format for two sets of equivalent atoms: [0, 0, 0, 0, 4, 4, 4, 4]
+    and this function converts to [[0, 1, 2, 3], [4, 5, 6, 7]]
+    """
+    idx_sort = np.argsort(records_array)
+    sorted_records_array = records_array[idx_sort]
+    vals, idx_start, count = np.unique(sorted_records_array, return_counts=True, return_index=True)
+    res = np.split(idx_sort, idx_start[1:])
+    return res
+
+
+def get_equivalent_indices_grouped(structure: Structure, symm_ops: List[SymmOp] = None, symprec: float = 0.001,
+                                   spgn: int = None) -> Optional[List[List[int]]]:
+    """
+    Determines the groups of equivalent atoms according to the symmetries. If the list of symmetry
+    operations are passed these will be used to determine the equivalent atoms, otherwise
+    they will be determined by spglib.
+
+    Args:
+        structure: the structure from which the equivalent points should be extracted.
+        symm_ops: the optional list of symmetry operations of the structure.
+        symprec: tolerance allowed to determine if two atoms are equivalent. Used both
+            for the procedure based on the list of symmetry operations or on spglib.
+        spgn: if not None represents the expected spacegroup that should be identified
+            by spglib.
+
+    Returns:
+        a list of lists of indices of equivalent atoms. Atoms belonging to the same sublist
+        are equivalent.
+        If spgn is not None and does not match what found by spglib returns None.
+    """
+    eq_ind = get_equivalent_indices(structure=structure, symm_ops=symm_ops, symprec=symprec, spgn=spgn)
+    if eq_ind is None:
+        return None
+    return unequivalent_ind(eq_ind)
+
+
+def get_inequivalent_representative(structure: Structure, symm_ops: List[SymmOp] = None, symprec: float = 0.001,
+                                    spgn: int = None) -> Optional[List[int]]:
+    """
+    Determines a list of inequivalent site indices. From a list of equivalent sites only one
+    is returned. No guarantee on which one. See get_equivalent_indices_grouped for more details.
+
+    Args:
+        structure: the structure from which the equivalent points should be extracted.
+        symm_ops: the optional list of symmetry operations of the structure.
+        symprec: tolerance allowed to determine if two atoms are equivalent. Used both
+            for the procedure based on the list of symmetry operations or on spglib.
+        spgn: if not None represents the expected spacegroup that should be identified
+            by spglib.
+
+    Returns:
+        a list of inequivalent indices.
+        If spgn is not None and does not match what found by spglib returns None.
+    """
+    eq_ind = get_equivalent_indices_grouped(structure=structure, symm_ops=symm_ops, symprec=symprec, spgn=spgn)
+
+    if eq_ind is None:
+        return None
+
+    return [l[0] for l in eq_ind]
+
+
+def get_inequivalent_site_representative(structure: Structure, symm_ops: List[SymmOp] = None, symprec: float = 0.001,
+                                         spgn: int = None) -> Optional[List[int]]:
+    """
+    Determines a list of inequivalent sites. From a list of equivalent sites only one
+    is returned. No guarantee on which one. See get_equivalent_indices_grouped for more details.
+
+    Args:
+        structure: the structure from which the equivalent points should be extracted.
+        symm_ops: the optional list of symmetry operations of the structure.
+        symprec: tolerance allowed to determine if two atoms are equivalent. Used both
+            for the procedure based on the list of symmetry operations or on spglib.
+        spgn: if not None represents the expected spacegroup that should be identified
+            by spglib.
+
+    Returns:
+        a list of inequivalent sites.
+        If spgn is not None and does not match what found by spglib returns None.
+    """
+    ind = get_inequivalent_representative(structure=structure, symm_ops=symm_ops, symprec=symprec, spgn=spgn)
+
+    if ind is None:
+        return None
+
+    return [structure[i] for i in ind]

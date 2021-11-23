@@ -4,6 +4,8 @@ import logging
 import random
 import numpy as np
 from scipy.optimize import linear_sum_assignment
+from scipy.cluster.hierarchy import linkage, fcluster
+from scipy.spatial.distance import squareform
 from pymatgen.core.structure import Structure
 from pymatgen.core.lattice import Lattice
 from pymatgen.core.structure import PeriodicSite
@@ -569,7 +571,7 @@ def get_symmetrized_structure(structure: Structure, spacegroup: Union[str, int],
 def structure_from_symmops(symm_ops: List[SymmOp], lattice: Union[List, np.ndarray, Lattice],
                            species: Sequence[Union[str, Element, Species, DummySpecies, Composition]],
                            coords: Sequence[Sequence[float]], coords_are_cartesian: bool = False,
-                           tol: float = 1e-5):
+                           tol: float = 1e-5) -> Structure:
     if not isinstance(lattice, Lattice):
         lattice = Lattice(lattice)
 
@@ -595,6 +597,21 @@ def structure_from_symmops(symm_ops: List[SymmOp], lattice: Union[List, np.ndarr
         all_coords.extend(cc)
 
     return Structure(lattice, all_sp, all_coords)
+
+
+def structure_from_symmetries(lattice: Union[List, np.ndarray, Lattice],
+                              species: Sequence[Union[str, Element, Species, DummySpecies, Composition]],
+                              coords: Sequence[Sequence[float]], symm_ops: List[SymmOp] = None,
+                              spacegroup: Union[str, int] = None, coords_are_cartesian: bool = False,
+                              tol: float = 1e-5) -> Structure:
+    if symm_ops:
+        return structure_from_symmops(symm_ops, lattice, species, coords,
+                                      coords_are_cartesian=coords_are_cartesian, tol=tol)
+    else:
+        if spacegroup is None:
+            raise ValueError("symm_ops and spacegroup cannot be both None")
+        return Structure.from_spacegroup(spacegroup, lattice, species, coords,
+                                         coords_are_cartesian=coords_are_cartesian, tol=tol)
 
 
 def merge_structures(*structures: Structure,
@@ -828,3 +845,34 @@ def has_low_energy(structure: Structure, energy_threshold: float) -> bool:
             return False
         original_energy = original_energy_tot / len(structure)
     return original_energy <= energy_threshold
+
+
+def is_fully_connected(structure: Structure, max_dist: float = 1.7, supercell: Union[int, List] = 2) -> bool:
+    """
+    Determines if the atoms of a structure form a connected graph, where two atoms are considered connected
+    if their distance is below the given max_dist.
+    By default a supercell is made of the given cell, in order to take into account periodic replicas of the
+    group of atoms in the structure. For example a single nanotube or fullerene would be considered fully
+    connected if a supercell is not taken into account. Here the attempt is to determine if this is a 3D
+    periodic structure.
+
+    Args:
+        structure: a Structure to analyse.
+        max_dist: the maximum distances beyond which two atoms are not considered bonded.
+        supercell: the size of the supercell that should be generated.
+
+    Returns:
+        bool: True if the structure is fully connected.
+    """
+    if supercell is not None:
+        structure = structure.copy()
+        structure.make_supercell(supercell)
+
+    # convert to upper triangle the distance matrix for the input of the linkage
+    dm = squareform(structure.distance_matrix)
+    Z = linkage(dm)
+    T = fcluster(Z, max_dist, criterion="distance")
+
+    num_partitions = len(set(T))
+
+    return num_partitions == 1
