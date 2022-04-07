@@ -7,7 +7,7 @@ import re
 import tempfile
 import os
 import warnings
-from os.path import exists
+
 
 class Cssr(CssrPmg):
     def __init__(self, structure):
@@ -25,15 +25,15 @@ class Cssr(CssrPmg):
         return "\n".join(output)
 
 class Zeopp:
-    def __init__(self, structure: Structure, network_path: str = './network'):
+    def __init__(self, structure: Structure, network_path: str = 'network'):
         """
         This class reproduce the behaviour of Zeo++ (http://www.zeoplusplus.org/).
         To get the various properties just use get_(property name).
         Check http://www.zeoplusplus.org/examples.html for documentation
 
-        It stores the various properties in a dictionary that can returned altogether, otherwise each method can return its own
-        output. If the output file from zeo++ is needed a path to store the file is needed. The default is to remove the output
-        file at the end.
+        It stores the various properties in a dictionary that can be returned method by method.
+        If the output file from zeo++ is needed, a path to store the file is needed. 
+        The default is to remove the output file at the end.
 
         Args:
         
@@ -42,36 +42,16 @@ class Zeopp:
         """
         self.network_path = network_path
         self.structure = structure
-        self.dict = {}
-
-    def _fill_dict(self, new_res: dict):
-        for key,item in new_res.items():
-            for k in self.dict:
-                if key == k:
-                    break
-            else:
-                self.dict[key] = item
-
-    def _check_dict(self, key : str):
-        for k,i in self.dict.items():
-            if k == key:
-                return i
-        return None
-
-    def return_complete_dict(self):
-        copy = {}
-        for key,item in self.dict.items():
-            copy[key] = item
-        return copy
-
-    def get_pore_diameter(self, out_dir: str = None, use_ha: bool = True, return_output: bool = False):
+        
+    def get_pore_diameter(self, out_dir: str = None, use_ha: bool = True):
         if out_dir is None:
             out_dir = tempfile.mkdtemp()
         
-        if not exists(out_dir+'/s.cssr'):
-            Cssr(self.structure).write_file(filename=out_dir+'/s.cssr')
+        input_struct = os.path.join(out_dir,'s.cssr') 
+        output_file = os.path.join(out_dir,'out.res')
+        Cssr(self.structure).write_file(filename=input_struct)
         
-        command = [self.network_path,'-res', out_dir+'/out.res', out_dir+'/s.cssr']
+        command = [self.network_path,'-res', output_file, input_struct]
       
         if use_ha:
             command.insert(1,'-ha')
@@ -79,40 +59,32 @@ class Zeopp:
         process.communicate()
         rrr = process.returncode
         if rrr != 0:
-            warnings.warn('Process failed',UserWarning)
+            raise RuntimeError('Process failed')
         output = {}
         prop = ["included_sphere","free_sphere","included_sphere_free_path"]
-        not_prop = []
-        for i,p in enumerate(prop):
-            h = self._check_dict(p)
-            if h:
-                output[p] = h
-                not_prop.append(p)
         
-        with open(out_dir+'/out.res','r') as k:
+        
+        with open(output_file,'r') as k:
             l = k.read()
             
-            ll = re.compile(out_dir+'/out.res    ')
+            ll = re.compile(os.path.join(out_dir,'out.res    '))
             m = ll.split(l)
             val = m[1].split()
             
             for i,p in enumerate(prop):
-                if p not in not_prop:
-                    output[p] = val[i]
+                output[p] = val[i]
         
-        self._fill_dict(output)
-        
-        if return_output:
-            return output 
+        return output 
 
-    def get_channel_id_dim(self, out_dir: str = None, use_ha: bool = True, prob_radius: float = 1.5, return_output: bool = False):
+    def get_channel_id_dim(self, out_dir: str = None, use_ha: bool = True, prob_radius: float = 1.5):
         if out_dir is None:
             out_dir = tempfile.mkdtemp()
         
-        if not exists(out_dir+'/s.cssr'):
-            Cssr(self.structure).write_file(filename=out_dir+'/s.cssr')
+        input_struct = os.path.join(out_dir,'s.cssr')
+        output_file = os.path.join(out_dir,'out.chan')
+        Cssr(self.structure).write_file(filename=input_struct)
  
-        command = [self.network_path,'-chan', str(prob_radius), out_dir+'/out.chan', out_dir+'/s.cssr']
+        command = [self.network_path,'-chan', str(prob_radius), output_file, input_struct]
 
         if use_ha:
             command.insert(1,'-ha')
@@ -121,19 +93,13 @@ class Zeopp:
         process.communicate()
         rrr = process.returncode
         if rrr != 0:
-            warnings.warn('Process failed',UserWarning)
+            raise RuntimeError('Process failed')
 
         prop = ["included_sphere_channel","free_sphere_channel","included_sphere_free_path_channel"]
-        not_prop = []
+        
         output = {}
-        for i,p in enumerate(prop):
-            h = self._check_dict(p)
-            if h:
-                output[p] = h
-                not_prop.append(p)
-
-
-        with open(out_dir+'/out.chan', 'r') as k:
+        
+        with open(output_file, 'r') as k:
             l = k.read()
 
             i = 0
@@ -141,49 +107,46 @@ class Zeopp:
             m = ll.split(l)
             
             for p in prop : 
-                if p not in not_prop:
-                    output[p] = []
+                output[p] = []
 
             while len(m) == 2:
                 h = re.compile(r"(\d+)(\.(\d+))*")
                 j = h.match(m[1])
-                if "included_sphere_channel" not in not_prop:
-                    output["included_sphere_channel"].append(float(j.group()))
+                output["included_sphere_channel"].append(float(j.group()))
 
                 ll = re.compile(f"{output['included_sphere_channel'][i]}  ")
                 m = ll.split(l)
                 h = re.compile(r"(\d+)(\.(\d+))*")
                 j = h.match(m[1])
-                if "free_sphere_channel" not in not_prop:
-                    output["free_sphere_channel"].append(float(j.group()))
+                output["free_sphere_channel"].append(float(j.group()))
 
                 ll = re.compile(f"{output['free_sphere_channel'][i]}  ")
                 m = ll.split(l)
                 h = re.compile(r"(\d+)(\.(\d+))*")
                 j = h.match(m[1])
-                if "included_sphere_free_path_channel" not in not_prop:
-                    output["included_sphere_free_path_channel"].append(float(j.group()))
+                output["included_sphere_free_path_channel"].append(float(j.group()))
 
                 i += 1
                 ll = re.compile("Channel  {0}  ".format(i))
                 m = ll.split(l)
 
-        self._fill_dict(output)
+        
 
-        if return_output:
-            return output
+        return output
 
 
     def get_surface_area(self, out_dir: str = None, use_ha: bool = True,probe_radius: float = 1.2, chan_radius: float = 1.2,
-                         num_samples: int = 2000, return_output: bool = False):
+                         num_samples: int = 2000):
         if out_dir is None:
             out_dir = tempfile.mkdtemp()
 
-        if not exists(out_dir+'/s.cssr'):
-            Cssr(self.structure).write_file(filename=out_dir+'/s.cssr')
+        input_struct = os.path.join(out_dir,'s.cssr')
+        output_file = os.path.join(out_dir,'out.sa')
 
-        command = [self.network_path,'-sa', str(chan_radius), str(probe_radius), str(num_samples), out_dir+'/out.sa', 
-                   out_dir+'/s.cssr']
+        Cssr(self.structure).write_file(filename=input_struct)
+
+        command = [self.network_path,'-sa', str(chan_radius), str(probe_radius), str(num_samples), output_file, 
+                   input_struct]
 
         if use_ha:
             command.insert(1,'-ha')
@@ -192,27 +155,20 @@ class Zeopp:
         process.communicate()
         rrr = process.returncode
         if rrr != 0:
-            warnings.warn('Process failed',UserWarning)
+            raise RuntimeError('Process failed')
 
         
-        with open(out_dir+'/out.sa', 'r') as k:
+        with open(output_file, 'r') as k:
             l = k.read()
 
             prop = ['Unitcell_volume: ', 'Density: ', 'ASA_A\^2: ', 'NASA_A\^2: ', 'Channel_surface_area_A\^2: ',
                     'Pocket_surface_area_A\^2: ']
             names = ['Unitcell_volume', 'Density', 'Acc_area', 'Not_acc_area','Channel_surf_area','Pocket_surface_area']
 
-            not_prop = []
-            output = {}
-            for i,p in enumerate(prop):
-                h = self._check_dict(names[i])
-                if h:
-                    output[p] = h
-                    not_prop.append(p)
             
-            for i, p in enumerate(prop):
-                if p in not_prop:
-                    continue
+            output = {}
+           
+            for i, p in enumerate(prop): 
                 n = 0
                 if names[i] == 'Pocket_surface_area' or names[i] == 'Channel_surf_area':
                     if names[i] == 'Pocket_surface_area':
@@ -242,22 +198,22 @@ class Zeopp:
                 else:
                     output[names[i]] = float(j.group())
 
-        self._fill_dict(output)
-
-        if return_output:
-            return output
+        
+        return output
 
 
     def get_accessible_volume(self, out_dir: str = None, use_ha: bool = True, chan_radius: float = 1.2, probe_radius: float = 1.2,
-                              num_samples: int = 50000, return_output: bool = False):
+                              num_samples: int = 50000):
         if out_dir is None:
             out_dir = tempfile.mkdtemp()
 
-        if not exists(out_dir+'/s.cssr'):
-            Cssr(self.structure).write_file(filename=out_dir+'/s.cssr')
+        input_struct = os.path.join(out_dir,'s.cssr')
+        output_file = os.path.join(out_dir,'out.vol')
 
-        command = [self.network_path,'-vol', str(chan_radius), str(probe_radius), str(num_samples), out_dir+'/out.vol',
-                   out_dir+'/s.cssr']
+        Cssr(self.structure).write_file(filename=input_struct)
+
+        command = [self.network_path,'-vol', str(chan_radius), str(probe_radius), str(num_samples), output_file,
+                   input_struct]
 
         if use_ha:
             command.insert(1,'-ha')
@@ -266,30 +222,18 @@ class Zeopp:
         process.communicate()
         rrr = process.returncode
         if rrr != 0:
-            warnings.warn('Process failed',UserWarning)
+            raise RuntimeError('Process failed')
  
-        with open(out_dir+'/out.vol', 'r') as k:
+        with open(output_file, 'r') as k:
             l = k.read()
 
             prop = ['Unitcell_volume: ', 'Density: ', 'AV_A\^3: ', 'NAV_A\^3: ', 'Channel_volume_A\^3: ',
                     'Pocket_volume_A\^3: ']
             names = ['Unitcell_volume', 'Density', 'Acc_volume', 'Not_acc_volume','Channel_volume','Pocket_volume']
             
-            not_prop = []
-            output = {}
-            for i,p in enumerate(prop):
-                h = self._check_dict(names[i])
-                if h:
-                    output[p] = h
-                    not_prop.append(p)
-
             
-
+            output = {}
             for i, p in enumerate(prop):
-               
-                if p in not_prop:
-                    continue
-
                 n = 0
                 if names[i] == 'Pocket_volume' or names[i] == 'Channel_volume':
                     if names[i] == 'Pocket_volume':
@@ -311,7 +255,7 @@ class Zeopp:
                 j = h.match(m[1])
 
                 if n > 1:
-                    self.dict[names[i]] = []
+                    output[names[i]] = []
                     ll = re.compile('  ')
                     m = ll.split(m[1])
                     for I in range(n):
@@ -319,26 +263,25 @@ class Zeopp:
                 else:
                     output[names[i]] = float(j.group())
         
-        self._fill_dict(output)
-
-        if return_output:
-            return output
+        return output
  
 
 
 
     def get_probe_occupiable_volume(self, out_dir: str = None, use_ha: bool = True, chan_radius: float = 1.2, probe_radius: float = 1.2,
-                                    num_samples: int = 50000, return_output: bool = False):
+                                    num_samples: int = 50000):
        
 
         if out_dir is None:
             out_dir = tempfile.mkdtemp()
 
-        if not exists(out_dir+'/s.cssr'):
-            Cssr(self.structure).write_file(filename=out_dir+'/s.cssr')
+        input_struct = os.path.join(out_dir,'s.cssr')
+        output_file = os.path.join(out_dir,'out.volpo')
 
-        command = [self.network_path,'-volpo', str(chan_radius), str(probe_radius), str(num_samples), out_dir+'/out.volpo',
-                   out_dir+'/s.cssr']
+        Cssr(self.structure).write_file(filename=input_struct)
+
+        command = [self.network_path,'-volpo', str(chan_radius), str(probe_radius), str(num_samples), output_file,
+                   input_struct]
 
         if use_ha:
             command.insert(1,'-ha')
@@ -347,35 +290,23 @@ class Zeopp:
         process.communicate()
         rrr = process.returncode
         if rrr != 0:
-            warnings.warn('Process failed',UserWarning)
+            raise RuntimeError('Process failed')
 
 
-        with open(out_dir+'/out.volpo', 'r') as k:
+        with open(output_file, 'r') as k:
             l = k.read()
             prop = ['Unitcell_volume: ', 'Density: ', 'POAV_A\^3: ', 'PONAV_A\^3: ']
             names = ['Unitcell_volume', 'Density', 'Probe_occupibale_volume', 'Not_acc_probe_occupibale_volume']
             
-            not_prop = []
+            
             output = {}
-            for i,p in enumerate(prop):
-                h = self._check_dict(names[i])
-                if h:
-                    output[p] = h
-                    not_prop.append(p)
-
-
             for i, p in enumerate(prop):
-                if p in not_prop:
-                    continue
                 ll = re.compile(p)
                 m = ll.split(l)
                 h = re.compile(r"(\d+)(\.(\d+))*")
                 j = h.match(m[1])
                 output[names[i]] = float(j.group())
         
-        self._fill_dict(output)
-
-        if return_output:
             return output
 
 
