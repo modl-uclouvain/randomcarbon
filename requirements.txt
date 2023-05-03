@@ -1,0 +1,5 @@
+numpy
+pymatgen
+ase
+monty
+pymongo
