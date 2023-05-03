@@ -2,7 +2,14 @@
 
 ## Introduction
 
-This repository contains the RandomCarbon Python code. This package is used to randomly generate symmetric carbon structures around a template. The generated structures will be required to satisfy certain constraints. The templates provided in [randomcarbon/data/templates/](randomcarbon/data/templates/) are zeolite structures taken from [IZA Database for Zeolite Sructures](https://www.iza-structures.org/databases/), but one can use other structures from the same database or some completely different. The package was developed to generate schwarzite models as described in [Marazzi et. al, "Modelling symmetric and defect-free carbon schwarzites into various zeolite templates"](URL). Please refere to the pubblication for more details.
+This repository contains the RandomCarbon Python code. This package is used to randomly generate symmetric carbon structures around a template. The package was developed to generate schwarzite models as described in [Marazzi et. al, "Modelling symmetric and defect-free carbon schwarzites into various zeolite templates"](URL). Please refer to the pubblication for more details.
+
+## Aim
+
+The code is intended to generate new models for schwarzites [1-3]. Schwarzites are 3D carbon-based nanostructures which are characterized by a negative curvature and that form 3 bonds with other carbons (sp<sup>2</sup> hybridization). These nanostructures are 'surface-like' hence, once the reference template has been chosen, they are predicted to occupy a narrow space in a certain distance from it. Therefore, one constraint is that the carbon atoms distance from the template <i>d</i> will be <i>min_distance &lt; d &lt; max_distance</i>. Another constraint is the hybridization, so models in which carbon atoms form exactly three bonds will be promoted. Finally, the goal is to produce symmetrical structure: as a consequence, a spacegroup will be enforced and kept during the all generation process. To deal with structure generation and the spacegroup analysis the [pymatgen](https://pymatgen.org/) package is used. 
+
+The templates provided in the [templates](randomcarbon/data/templates/) folder are some of zeolite from the [IZA Database of Zeolite structure](http://www.iza-structure.org/databases/), however one can also use other zeolite from that database or from others.
+
 
 ## Installation
 
@@ -16,7 +23,7 @@ For pip use:
 pip install -r requirements.txt
 ```
 
-If you're using [conda](https://conda.io/en/latest/) create a new environment ('randomcarbon') based on python3.9:
+If you're using [conda](https://conda.io/en/latest/) create a new environment (`randomcarbon`) based on python3.9:
 
 ```
 conda create -n randomcarbon python=3.9
@@ -47,7 +54,7 @@ The generated structures are saved in Json format as python dictionaries and may
 
 ## Genetic algorithm
 
-The genetic algorithm is based on the implementation of the genetic algorithm in [ASE](https://wiki.fysik.dtu.dk/ase/ase/ga/ga.html). The growth, reduction and mixing of the structures operations have been adapted to fit with the requirements of the present work. 
+The genetic algorithm is based on the implementation of the genetic algorithm in [ASE](https://wiki.fysik.dtu.dk/ase/ase/ga/ga.html). The growth, reduction and mixing of the structures operations have been adapted to fit with the requirements of the present work. With respect to the operations available for the random generation, here some evolver that moves atoms, and merges two or more structures have been added.
 
 ## Templates geometry
 
@@ -69,6 +76,14 @@ The authors acknowledge fundings from the European Union’s Horizon 2020 Resear
 
 Enrico Marazzi, Ali Ghojavand, Jérémie Pirard, Guido Petretto, Jean-Christophe Charlier, Gian-Marco Rignanese
 
+### References
+
+[1] L Mackay, H Terrones, Diamond from graphite. Nature 352, 762 (1991)
+
+[2] D Vanderbilt, J Tersoff, Negative-curvature fullerene analog of c60. Phys. Rev. Lett. 68, 511–513 (1992)
+
+[3] T Lenosky, X Gonze, M Teter, V Elser, Energetics of negatively curved graphitic carbon. Nature 355, 333–335 (1992)
+
 ### License
 
-RandomCarbon is released under the GNU GENERAL PUBLIC LICENSE. For more details see the LICENSE file.
+RandomCarbon is released under the GNU GENERAL PUBLIC LICENSE. For more details see the [LICENSE](LICENSE) file.
