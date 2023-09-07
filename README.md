@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This repository contains the RandomCarbon Python code. This package is used to randomly generate symmetric carbon structures around a template. The package was developed to generate schwarzite models as described in [Marazzi et. al, "Modelling symmetric and defect-free carbon schwarzites into various zeolite templates"](URL). Please refer to the pubblication for more details.
+This repository contains the RandomCarbon Python code. This package is used to randomly generate symmetric carbon structures around a template. The package was developed to generate schwarzite models as described in [Marazzi et. al, "Modelling symmetric and defect-free carbon schwarzites into various zeolite templates"](https://www.sciencedirect.com/science/article/abs/pii/S0008622323006309). Please refer to the publication for more details.
 
 ## Aim
 
